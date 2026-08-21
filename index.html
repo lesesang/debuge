@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dice Random Tester</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { margin: 0; min-height: 100vh; background: #111827; color: #f3f4f6; }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 20px 48px; }
+    h1 { margin-bottom: 8px; }
+    .muted { color: #9ca3af; }
+    .card { background: #1f2937; border: 1px solid #374151; border-radius: 14px; padding: 20px; margin-top: 20px; }
+    label { display:block; margin: 14px 0 6px; font-weight: 700; }
+    input, textarea { box-sizing: border-box; width: 100%; background:#111827; color:#f3f4f6; border:1px solid #4b5563; border-radius:8px; padding:10px 12px; font: inherit; }
+    button { margin-top: 16px; padding: 10px 14px; border:0; border-radius:8px; cursor:pointer; font-weight:700; }
+    #generate { background:#f3f4f6; color:#111827; }
+    #copy { background:#374151; color:#fff; margin-left:8px; }
+    pre { white-space: pre-wrap; overflow:auto; background:#0b1020; border:1px solid #374151; border-radius:8px; padding:14px; line-height:1.5; }
+    .error { color:#fca5a5; min-height:1.4em; }
+    .hint { font-size:.92rem; color:#9ca3af; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Dice Random Tester</h1>
+  <p class="muted">다이스 표현식과 원하는 각 주사위 결과를 넣으면, 클라이언트 난수 로직을 테스트할 수 있는 코드를 생성합니다.</p>
+
+  <section class="card">
+    <label for="dice">다이스</label>
+    <input id="dice" value="2d100" placeholder="예: 1d20, 2d100, 1d100m50">
+
+    <label for="results">원하는 결과값</label>
+    <input id="results" value="11, 81" placeholder="예: 11, 81">
+    <p class="hint">여러 주사위는 쉼표로 구분합니다. 결과 개수는 주사위 개수와 같아야 합니다.</p>
+
+    <div id="error" class="error"></div>
+    <button id="generate">코드 생성</button>
+    <button id="copy" type="button">복사</button>
+
+    <label for="output">생성된 코드</label>
+    <pre id="output">여기에 테스트 코드가 표시됩니다.</pre>
+  </section>
+</main>
+<script>
+  const diceEl = document.querySelector('#dice');
+  const resultsEl = document.querySelector('#results');
+  const outputEl = document.querySelector('#output');
+  const errorEl = document.querySelector('#error');
+
+  function parseDice(text) {
+    const m = text.trim().match(/^(\d+)d(\d+)(?:m(\d+))?$/i);
+    if (!m) throw new Error('다이스 형식이 올바르지 않습니다. 예: 1d20, 2d100, 1d100m50');
+    const count = Number(m[1]);
+    const max = Number(m[2]);
+    const min = m[3] === undefined ? 1 : Number(m[3]);
+    if (count < 1 || count > 1000) throw new Error('주사위 개수는 1~1000 사이여야 합니다.');
+    if (max < 1 || min < 1 || min > max) throw new Error('최소/최대값을 확인하세요.');
+    return { count, min, max };
+  }
+
+  function resultToRandom(result, min, max) {
+    if (result < min || result > max) throw new Error(`${min}~${max} 범위 밖의 결과가 있습니다: ${result}`);
+    // floor(r * (max-min+1)) + min = result 이 되도록 구간의 중앙값을 사용.
+    return (result - min + 0.5) / (max - min + 1);
+  }
+
+  function generate() {
+    errorEl.textContent = '';
+    try {
+      const { count, min, max } = parseDice(diceEl.value);
+      const results = resultsEl.value.split(',').map(s => Number(s.trim()));
+      if (results.length !== count) throw new Error(`이 다이스는 ${count}개의 결과가 필요합니다.`);
+      if (results.some(n => !Number.isInteger(n))) throw new Error('결과값은 정수만 입력하세요.');
+
+      const values = results.map(n => resultToRandom(n, min, max));
+      const formatted = values.map(n => Number(n.toFixed(12)));
+      outputEl.textContent = `const values = [${formatted.join(', ')}];\nMath.random = () => values.shift();`;
+    } catch (e) {
+      outputEl.textContent = '여기에 테스트 코드가 표시됩니다.';
+      errorEl.textContent = e.message;
+    }
+  }
+
+  document.querySelector('#generate').addEventListener('click', generate);
+  document.querySelector('#copy').addEventListener('click', async () => {
+    const text = outputEl.textContent;
+    if (!text || text.startsWith('여기에')) return;
+    try { await navigator.clipboard.writeText(text); errorEl.textContent = '복사했습니다.'; }
+    catch { errorEl.textContent = '자동 복사에 실패했습니다. 코드를 직접 복사하세요.'; }
+  });
+  generate();
+</script>
+</body>
+</html>
