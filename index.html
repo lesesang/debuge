@@ -7,29 +7,29 @@
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;--bg:#0f172a;--card:#1e293b;--line:#334155;--muted:#94a3b8;--text:#f8fafc;--accent:#e2e8f0;--danger:#fca5a5;--ok:#86efac}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:var(--bg);color:var(--text)}main{max-width:960px;margin:auto;padding:36px 20px 56px}h1{margin:0 0 8px;font-size:30px}.lead{margin:0;color:var(--muted)}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;margin-top:20px}h2{font-size:18px;margin:0 0 6px}.section-desc,.hint{color:var(--muted);font-size:14px;margin:0 0 12px;line-height:1.6}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:700px){.grid{grid-template-columns:1fr}}
-label{display:block;font-weight:700;margin:0 0 7px}textarea{width:100%;min-height:170px;resize:vertical;background:#0b1220;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}textarea:focus{outline:2px solid #64748b;outline-offset:1px}.examples{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#cbd5e1}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:9px;padding:10px 15px;font-weight:800;cursor:pointer}#generate{background:var(--accent);color:#0f172a}#copy{background:#475569;color:#fff}button.secondary{background:#334155;color:#fff}.status{min-height:24px;margin-top:12px;font-size:14px}.error{color:var(--danger)}.success{color:var(--ok)}pre{white-space:pre-wrap;overflow:auto;background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:15px;line-height:1.55;font-size:13px;margin:10px 0 0}.guide{display:grid;gap:12px}.guide-item{padding:13px 14px;background:#162033;border:1px solid #2c3a50;border-radius:10px;line-height:1.65}.guide code{background:#0b1220;padding:2px 5px;border-radius:5px}.badge{display:inline-block;font-size:12px;padding:3px 7px;border-radius:999px;background:#334155;color:#cbd5e1;margin-left:6px}
+textarea{width:100%;min-height:170px;resize:vertical;background:#0b1220;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace}textarea:focus{outline:2px solid #64748b;outline-offset:1px}.examples{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#cbd5e1}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}button{border:0;border-radius:9px;padding:10px 15px;font-weight:800;cursor:pointer}#generate{background:var(--accent);color:#0f172a}#copy{background:#475569;color:#fff}button.secondary{background:#334155;color:#fff}.status{min-height:24px;margin-top:12px;font-size:14px}.error{color:var(--danger)}.success{color:var(--ok)}pre{white-space:pre-wrap;overflow:auto;background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:15px;line-height:1.55;font-size:13px;margin:10px 0 0}.guide{display:grid;gap:12px}.guide-item{padding:13px 14px;background:#162033;border:1px solid #2c3a50;border-radius:10px;line-height:1.65}.guide code{background:#0b1220;padding:2px 5px;border-radius:5px}.badge{display:inline-block;font-size:12px;padding:3px 7px;border-radius:999px;background:#334155;color:#cbd5e1;margin-left:6px}
 </style>
 </head>
 <body>
 <main>
   <header>
     <h1>Dice Random Tester</h1>
-    <p class="lead">원하는 다이스 결과를 지정하고, 대상 페이지에서 실제 다이스 계산만 원하는 값으로 재현합니다.</p>
+    <p class="lead">다이스 계산용 난수만 원하는 값으로 바꿔 실제 결과를 재현합니다.</p>
   </header>
 
   <section class="card">
     <div class="grid">
       <div>
         <h2>① 다이스 설정 <span class="badge">굴리는 값</span></h2>
-        <p class="section-desc">한 줄에 하나씩 입력합니다. 아래 결과와 같은 순서로 대응합니다.</p>
+        <p class="section-desc">한 줄에 하나씩 입력합니다.</p>
         <textarea id="specs" spellcheck="false" placeholder="2d100u
 1d600
 3d20m5"></textarea>
         <p class="hint">지원: <span class="examples">NdM</span>, <span class="examples">NdMmK</span>, 끝에 <span class="examples">u</span></p>
       </div>
       <div>
-        <h2>② 원하는 결과 <span class="badge">나와야 하는 값</span></h2>
-        <p class="section-desc">각 줄의 결과 개수는 해당 다이스의 개수와 같아야 합니다.</p>
+        <h2>② 원하는 결과 <span class="badge">나올 값</span></h2>
+        <p class="section-desc">각 줄의 결과 개수는 다이스 개수와 같아야 합니다.</p>
         <textarea id="results" spellcheck="false" placeholder="40,80
 123
 7,12,20"></textarea>
@@ -47,17 +47,17 @@ label{display:block;font-weight:700;margin:0 0 7px}textarea{width:100%;min-heigh
 
   <section class="card">
     <h2>생성된 테스트 코드</h2>
-    <p class="section-desc">이 코드를 대상 페이지의 DevTools Console에 붙여넣으면 적용됩니다.</p>
+    <p class="section-desc">대상 페이지의 DevTools Console에 붙여넣습니다.</p>
     <pre id="output">아직 생성된 코드가 없습니다.</pre>
   </section>
 
   <section class="card guide">
     <h2>사용법</h2>
-    <div class="guide-item"><b>1. 다이스 설정</b><br><code>2d100u</code>처럼 실제 댓글에 넣을 다이스 문법을 입력합니다.</div>
-    <div class="guide-item"><b>2. 원하는 결과</b><br><code>40,80</code>처럼 실제로 나오게 할 값을 같은 줄에 입력합니다.</div>
-    <div class="guide-item"><b>3. 코드 생성 → 대상 페이지 Console에 붙여넣기</b><br>그 뒤 댓글을 등록하면 지정한 순서대로 결과가 나옵니다.</div>
-    <div class="guide-item"><b>난수 처리</b><br>다이스 계산은 테스트 값, <code>sjcl.encrypt()</code>는 원래 난수를 사용합니다. <code>Error().stack</code>으로 파일명이나 함수명을 추측하지 않습니다.</div>
-    <div class="guide-item"><b>테스트 종료</b><br><code>window.__diceTestRestore()</code>를 실행하면 패치한 함수와 테스트 상태를 전부 원래대로 복구합니다.</div>
+    <div class="guide-item"><b>1.</b> 다이스 설정을 입력합니다. 예: <code>2d100u</code></div>
+    <div class="guide-item"><b>2.</b> 원하는 결과를 같은 순서로 입력합니다. 예: <code>40,80</code></div>
+    <div class="guide-item"><b>3.</b> 코드 생성 → 대상 페이지 Console에 붙여넣고 댓글을 등록합니다.</div>
+    <div class="guide-item"><b>4.</b> <code>window.__diceTestRestore()</code>를 실행하면 패치한 함수를 원래 상태로 복구합니다.</div>
+    <div class="guide-item"><b>난수 처리:</b> 다이스 계산에는 지정값을 사용하고, <code>sjcl.encrypt()</code> 안의 암호화 난수에는 원래 <code>Math.random()</code>을 사용합니다.</div>
   </section>
 </main>
 <script>
@@ -69,19 +69,22 @@ const statusEl=document.querySelector('#status');
 function diceSpec(token){
   const m=token.trim().match(/^(\d+)d(\d+)(?:m(\d+))?(u)?$/);
   if(!m) throw new Error(`다이스 형식이 올바르지 않습니다: ${token}`);
-  const count=+m[1],max=+m[2],min=m[3]===undefined?1:+m[3],unique=!!m[4];
+  const count=Number(m[1]);
+  const max=Number(m[2]);
+  const min=m[3]===undefined?1:Number(m[3]);
+  const unique=Boolean(m[4]);
   if(count<1||count>50) throw new Error(`${token}: 주사위 개수는 1~50입니다.`);
   if(max<1||max>10000||min<0||min>9999||min>max) throw new Error(`${token}: 최소/최대값을 확인하세요.`);
   if(unique&&count>max-min+1) throw new Error(`${token}: u에서는 ${count}개를 중복 없이 뽑을 수 없습니다.`);
   return {count,max,min,unique};
 }
 
-function toRandom(value,min,max){
+function resultToRandom(value,min,max){
   if(!Number.isInteger(value)||value<min||value>max) throw new Error(`${min}~${max} 범위 밖의 결과: ${value}`);
   return (value-min+0.5)/(max-min+1);
 }
 
-function uniqueToRandom(results,min,max){
+function uniqueResultsToRandom(results,min,max){
   const remaining=[];
   for(let n=min;n<=max;n++) remaining.push(n);
   return results.map(value=>{
@@ -98,7 +101,7 @@ function parseInput(){
   const specs=specsEl.value.trim().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   const resultLines=resultsEl.value.trim().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   if(!specs.length) throw new Error('다이스 설정을 입력하세요.');
-  if(specs.length!==resultLines.length) throw new Error(`다이스 설정 ${specs.length}줄과 결과 ${resultLines.length}줄의 개수가 다릅니다.`);
+  if(specs.length!==resultLines.length) throw new Error(`다이스 ${specs.length}줄과 결과 ${resultLines.length}줄의 개수가 다릅니다.`);
 
   const values=[];
   specs.forEach((token,i)=>{
@@ -106,8 +109,8 @@ function parseInput(){
     const results=resultLines[i].split(/\s*,\s*/).filter(Boolean).map(Number);
     if(results.length!==spec.count) throw new Error(`${token}: 결과 ${spec.count}개가 필요하지만 ${results.length}개가 입력되었습니다.`);
     values.push(...(spec.unique
-      ? uniqueToRandom(results,spec.min,spec.max)
-      : results.map(v=>toRandom(v,spec.min,spec.max))));
+      ? uniqueResultsToRandom(results,spec.min,spec.max)
+      : results.map(value=>resultToRandom(value,spec.min,spec.max))));
   });
   return values;
 }
@@ -117,63 +120,74 @@ function generate(){
   statusEl.textContent='';
   try{
     const values=parseInput();
-    const nums=values.map(v=>Number(v.toFixed(12)));
+    const nums=values.map(value=>Number(value.toFixed(12)));
     outputEl.textContent=`(()=>{
-  if(window.__diceTestRestore) window.__diceTestRestore();
-  if(!window.__diceNativeRandom) window.__diceNativeRandom=Math.random;
+  // 이전 테스트가 있으면 먼저 복구합니다.
+  if(typeof window.__diceTestRestore==='function') window.__diceTestRestore();
 
+  const nativeRandom=Math.random;
   const originalSubmitComment=window.submitComment;
   const originalSjclEncrypt=window.sjcl?.encrypt;
+
   if(typeof originalSubmitComment!=='function') throw new Error('submitComment()을 찾지 못했습니다.');
   if(typeof originalSjclEncrypt!=='function') throw new Error('sjcl.encrypt()을 찾지 못했습니다.');
 
-  window.__diceTestValues=[${nums.join(', ')}];
-  window.__diceIndex=0;
-  window.__diceInSubmitComment=false;
-  window.__diceInSjclEncrypt=false;
+  const testValues=[${nums.join(', ')}];
+  let testIndex=0;
+  let inSubmitComment=false;
+  let inSjclEncrypt=false;
+  let restored=false;
 
   window.__diceTestRestore=()=>{
-    Math.random=window.__diceNativeRandom;
+    if(restored) return;
+    restored=true;
+    Math.random=nativeRandom;
     window.submitComment=originalSubmitComment;
     window.sjcl.encrypt=originalSjclEncrypt;
-    delete window.__diceTestValues;
-    delete window.__diceIndex;
-    delete window.__diceInSubmitComment;
-    delete window.__diceInSjclEncrypt;
     delete window.__diceTestRestore;
     console.log('[Dice Tester] 원래 상태로 복구했습니다.');
   };
 
   window.submitComment=function(...args){
-    const previous=window.__diceInSubmitComment;
-    window.__diceInSubmitComment=true;
-    try{return originalSubmitComment.apply(this,args)}
-    finally{window.__diceInSubmitComment=previous}
+    const previous=inSubmitComment;
+    inSubmitComment=true;
+    try{
+      return originalSubmitComment.apply(this,args);
+    }finally{
+      inSubmitComment=previous;
+    }
   };
 
   window.sjcl.encrypt=function(...args){
-    const previous=window.__diceInSjclEncrypt;
-    window.__diceInSjclEncrypt=true;
-    try{return originalSjclEncrypt.apply(this,args)}
-    finally{window.__diceInSjclEncrypt=previous}
+    const previous=inSjclEncrypt;
+    inSjclEncrypt=true;
+    try{
+      return originalSjclEncrypt.apply(this,args);
+    }finally{
+      inSjclEncrypt=previous;
+    }
   };
 
   Math.random=function(){
-    if(window.__diceInSjclEncrypt) return window.__diceNativeRandom();
-    if(window.__diceInSubmitComment&&window.__diceIndex<window.__diceTestValues.length){
-      return window.__diceTestValues[window.__diceIndex++];
+    // sjcl 암호화 내부에서는 항상 원래 난수를 사용합니다.
+    if(inSjclEncrypt) return nativeRandom();
+
+    // submitComment 안에서 소비되는 난수만 테스트 값으로 교체합니다.
+    if(inSubmitComment && testIndex<testValues.length){
+      return testValues[testIndex++];
     }
-    return window.__diceNativeRandom();
+
+    return nativeRandom();
   };
 
-  console.log('[Dice Tester] 적용 완료:',window.__diceTestValues.length,'개의 테스트 난수');
+  console.log('[Dice Tester] 적용 완료:',testValues.length,'개의 테스트 난수');
 })();`;
     statusEl.className='status success';
-    statusEl.textContent=`생성 완료 · ${values.length}개의 테스트 난수를 준비했습니다.`;
-  }catch(e){
+    statusEl.textContent=`생성 완료 · ${values.length}개의 테스트 난수`;
+  }catch(error){
     outputEl.textContent='아직 생성된 코드가 없습니다.';
     statusEl.className='status error';
-    statusEl.textContent=e.message;
+    statusEl.textContent=error.message;
   }
 }
 
@@ -181,11 +195,22 @@ document.querySelector('#generate').addEventListener('click',generate);
 document.querySelector('#copy').addEventListener('click',async()=>{
   const text=outputEl.textContent;
   if(!text||text.startsWith('아직')) return;
-  try{await navigator.clipboard.writeText(text);statusEl.className='status success';statusEl.textContent='코드를 복사했습니다.'}
-  catch{statusEl.className='status error';statusEl.textContent='자동 복사에 실패했습니다. 코드를 직접 복사하세요.'}
+  try{
+    await navigator.clipboard.writeText(text);
+    statusEl.className='status success';
+    statusEl.textContent='코드를 복사했습니다.';
+  }catch{
+    statusEl.className='status error';
+    statusEl.textContent='자동 복사에 실패했습니다. 코드를 직접 복사하세요.';
+  }
 });
+
 document.querySelector('#clear').addEventListener('click',()=>{
-  specsEl.value='';resultsEl.value='';outputEl.textContent='아직 생성된 코드가 없습니다.';statusEl.className='status';statusEl.textContent='';
+  specsEl.value='';
+  resultsEl.value='';
+  outputEl.textContent='아직 생성된 코드가 없습니다.';
+  statusEl.className='status';
+  statusEl.textContent='';
 });
 </script>
 </body>
