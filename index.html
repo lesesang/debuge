@@ -56,8 +56,9 @@ textarea{width:100%;min-height:170px;resize:vertical;background:#0b1220;color:va
     <div class="guide-item"><b>1.</b> 다이스 설정을 입력합니다. 예: <code>2d100u</code></div>
     <div class="guide-item"><b>2.</b> 원하는 결과를 같은 순서로 입력합니다. 예: <code>40,80</code></div>
     <div class="guide-item"><b>3.</b> 코드 생성 → 대상 페이지 Console에 붙여넣고 댓글을 등록합니다.</div>
-    <div class="guide-item"><b>4.</b> <code>window.__diceTestRestore()</code>를 실행하면 패치한 함수를 원래 상태로 복구합니다.</div>
-    <div class="guide-item"><b>난수 처리:</b> 다이스 계산에는 지정값을 사용하고, <code>sjcl.encrypt()</code> 안의 암호화 난수에는 원래 <code>Math.random()</code>을 사용합니다.</div>
+    <div class="guide-item"><b>4.</b> 댓글 실행이 끝나면 테스트 패치가 자동으로 원래 상태로 복구됩니다. 오류가 나도 자동 복구됩니다.</div>
+    <div class="guide-item"><b>난수 처리:</b> 다이스 계산에는 지정값을 사용하고, <code>sjcl.encrypt()</code> 내부에서는 원래 <code>Math.random()</code>을 사용합니다.</div>
+    <div class="guide-item"><b>잘못된 입력:</b> 다이스 형식·범위·결과 개수가 맞지 않으면 테스트 코드를 만들지 않습니다. 따라서 잘못된 값을 테스트 난수로 사용하지 않습니다.</div>
   </section>
 </main>
 <script>
@@ -107,6 +108,7 @@ function parseInput(){
   specs.forEach((token,i)=>{
     const spec=diceSpec(token);
     const results=resultLines[i].split(/\s*,\s*/).filter(Boolean).map(Number);
+    if(results.some(value=>Number.isNaN(value))) throw new Error(`${token}: 결과에는 숫자만 입력하세요.`);
     if(results.length!==spec.count) throw new Error(`${token}: 결과 ${spec.count}개가 필요하지만 ${results.length}개가 입력되었습니다.`);
     values.push(...(spec.unique
       ? uniqueResultsToRandom(results,spec.min,spec.max)
@@ -138,24 +140,39 @@ function generate(){
   let inSjclEncrypt=false;
   let restored=false;
 
-  window.__diceTestRestore=()=>{
+  const restore=()=>{
     if(restored) return;
     restored=true;
     Math.random=nativeRandom;
     window.submitComment=originalSubmitComment;
     window.sjcl.encrypt=originalSjclEncrypt;
     delete window.__diceTestRestore;
-    console.log('[Dice Tester] 원래 상태로 복구했습니다.');
+    console.log('[Dice Tester] 테스트가 끝나 원래 상태로 복구했습니다.');
   };
+
+  window.__diceTestRestore=restore;
 
   window.submitComment=function(...args){
     const previous=inSubmitComment;
     inSubmitComment=true;
+    let result;
     try{
-      return originalSubmitComment.apply(this,args);
-    }finally{
-      inSubmitComment=previous;
+      result=originalSubmitComment.apply(this,args);
+    }catch(error){
+      restore();
+      throw error;
     }
+
+    if(result&&typeof result.then==='function'){
+      return result.finally(()=>{
+        inSubmitComment=previous;
+        restore();
+      });
+    }
+
+    inSubmitComment=previous;
+    restore();
+    return result;
   };
 
   window.sjcl.encrypt=function(...args){
@@ -172,11 +189,10 @@ function generate(){
     // sjcl 암호화 내부에서는 항상 원래 난수를 사용합니다.
     if(inSjclEncrypt) return nativeRandom();
 
-    // submitComment 안에서 소비되는 난수만 테스트 값으로 교체합니다.
-    if(inSubmitComment && testIndex<testValues.length){
-      return testValues[testIndex++];
-    }
+    // submitComment 안에서 필요한 다이스 난수만 테스트 값으로 교체합니다.
+    if(inSubmitComment&&testIndex<testValues.length) return testValues[testIndex++];
 
+    // 예상보다 많은 난수가 필요하면 잘못된 값을 만들어내지 않고 원래 난수를 사용합니다.
     return nativeRandom();
   };
 
@@ -187,7 +203,7 @@ function generate(){
   }catch(error){
     outputEl.textContent='아직 생성된 코드가 없습니다.';
     statusEl.className='status error';
-    statusEl.textContent=error.message;
+    statusEl.textContent=`테스트를 만들지 않았습니다: ${error.message}`;
   }
 }
 
