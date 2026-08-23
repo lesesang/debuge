@@ -22,9 +22,9 @@
 
 <section class="card"><h2>② 테스트 코드</h2><p class="desc">생성된 코드를 대상 사이트의 DevTools Console에서 실행하세요.</p><pre id="output">아직 생성된 코드가 없습니다.</pre></section>
 
-<section class="card"><h2>③ 사용법</h2><div class="guide"><b>1.</b> 댓글에 다이스를 먼저 입력합니다.</div><div class="guide"><b>2.</b> 테스트 코드를 생성하고 Console에 실행합니다.</div><div class="guide"><b>3.</b> 그 상태에서 댓글 등록 버튼을 누릅니다.</div><div class="guide"><b>4.</b> 성공하면 지정한 결과로 등록되고 테스트는 자동 초기화됩니다.</div><div class="guide warn"><b>중요:</b> 실제 난수 개수가 준비한 개수와 다르면 테스트 결과를 등록하지 않고, 같은 댓글을 기본 랜덤으로 한 번만 다시 실행한 뒤 테스트를 초기화합니다.</div></section>
+<section class="card"><h2>③ 사용법</h2><div class="guide"><b>1.</b> 댓글에 다이스를 먼저 입력하거나, 테스트 코드를 먼저 실행합니다.</div><div class="guide"><b>2.</b> 코드가 적용된 상태에서 댓글 내용을 작성합니다.</div><div class="guide"><b>3.</b> 댓글 등록 버튼을 누릅니다.</div><div class="guide"><b>4.</b> 성공하면 지정한 결과로 등록되고 테스트는 자동 초기화됩니다.</div><div class="guide warn"><b>중요:</b> 실제 난수 개수가 준비한 개수와 다르면 테스트 결과를 등록하지 않고, 등록 직전의 댓글을 그대로 복원한 뒤 기본 랜덤으로 한 번 실행하고 테스트를 초기화합니다.</div></section>
 
-<section class="card"><h2>④ 동작</h2><div class="guide"><b>성공:</b> 지정한 테스트값으로 댓글을 등록하고 자동 초기화.</div><div class="guide"><b>개수 불일치:</b> 테스트 댓글 등록을 막음 → 입력 복원 → 기본 랜덤으로 한 번 실행 → 자동 초기화.</div><div class="guide"><b>오류:</b> 테스트를 해제하고 기본 랜덤으로 복구 → 자동 초기화.</div><div class="guide"><b>SJCL:</b> 암호화에 필요한 난수는 원래 난수를 사용합니다.</div><div class="guide"><b>범위:</b> 현재 브라우저의 현재 페이지에만 적용됩니다.</div></section>
+<section class="card"><h2>④ 동작</h2><div class="guide"><b>성공:</b> 지정한 테스트값으로 댓글을 등록하고 자동 초기화.</div><div class="guide"><b>개수 불일치:</b> 테스트 댓글 등록을 막음 → 등록 직전 입력 복원 → 기본 랜덤으로 한 번 실행 → 자동 초기화.</div><div class="guide"><b>오류:</b> 테스트를 해제하고 등록 직전 입력을 복원한 뒤 기본 랜덤으로 복구 → 자동 초기화.</div><div class="guide"><b>SJCL:</b> 암호화에 필요한 난수는 원래 난수를 사용합니다.</div><div class="guide"><b>범위:</b> 현재 브라우저의 현재 페이지에만 적용됩니다.</div></section>
 </main>
 <script>
 const specsEl=document.querySelector('#specs'),resultsEl=document.querySelector('#results'),outputEl=document.querySelector('#output'),statusEl=document.querySelector('#status');
@@ -51,12 +51,12 @@ function buildCode(values){const nums=values.map(v=>Number(v.toFixed(12)));retur
   let testOverflow=false;
   let inSjcl=0;
   let capturedAddComment=null;
+  let savedArea;
+  let savedUser;
 
-  const area=document.getElementById('commentArea');
-  const user=document.getElementById('commentUser');
-  const savedArea=area?.value;
-  const savedUser=user?.value;
   const restoreInputs=()=>{
+    const area=document.getElementById('commentArea');
+    const user=document.getElementById('commentUser');
     if(area&&savedArea!==undefined) area.value=savedArea;
     if(user&&savedUser!==undefined) user.value=savedUser;
   };
@@ -80,7 +80,6 @@ function buildCode(values){const nums=values.map(v=>Number(v.toFixed(12)));retur
   const onReject=()=>fail('처리되지 않은 비동기 오류가 발생했습니다.');
   window.addEventListener('error',onError);
   window.addEventListener('unhandledrejection',onReject);
-
   window.__diceTestRestore=()=>restore('수동 초기화로');
 
   window.sjcl.encrypt=function(...args){
@@ -104,6 +103,12 @@ function buildCode(values){const nums=values.map(v=>Number(v.toFixed(12)));retur
 
   window.submitComment=function(...args){
     if(restored||running) return originalSubmitComment.apply(this,args);
+
+    const area=document.getElementById('commentArea');
+    const user=document.getElementById('commentUser');
+    savedArea=area?.value;
+    savedUser=user?.value;
+
     running=true;
     randomCount=0;
     testIndex=0;
@@ -148,7 +153,7 @@ function buildCode(values){const nums=values.map(v=>Number(v.toFixed(12)));retur
     try{return originalSubmitComment.apply(this,args);}catch(e){console.error('[Dice Tester] 랜덤 복구 실행도 실패했습니다.',e);throw e;}
   }
 
-  console.log('[Dice Tester] 적용 완료. 이제 댓글의 등록 버튼을 누르세요.');
+  console.log('[Dice Tester] 적용 완료. 댓글을 먼저 작성했든 코드를 먼저 실행했든 등록 버튼을 누르면 테스트합니다.');
 })();`;}
 function generate(){statusEl.className='status';statusEl.textContent='';try{const values=parseInput();outputEl.textContent=buildCode(values);statusEl.className='status success';statusEl.textContent=`생성 완료 · 테스트 난수 ${values.length}개`;}catch(e){outputEl.textContent='아직 생성된 코드가 없습니다.';statusEl.className='status error';statusEl.textContent=`생성하지 않았습니다: ${e.message}`;}}
 document.querySelector('#generate').addEventListener('click',generate);
