@@ -1,119 +1,12 @@
 <!doctype html>
 <html lang="ko">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dice Random Tester</title>
-  <style>
-    :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-    body { margin: 0; min-height: 100vh; background: #111827; color: #f3f4f6; }
-    main { max-width: 760px; margin: 0 auto; padding: 32px 20px 48px; }
-    h1 { margin-bottom: 8px; }
-    .muted { color: #9ca3af; }
-    .card { background: #1f2937; border: 1px solid #374151; border-radius: 14px; padding: 20px; margin-top: 20px; }
-    label { display:block; margin: 14px 0 6px; font-weight: 700; }
-    input, textarea { box-sizing: border-box; width: 100%; background:#111827; color:#f3f4f6; border:1px solid #4b5563; border-radius:8px; padding:10px 12px; font: inherit; }
-    textarea { min-height: 72px; resize: vertical; }
-    button { margin-top: 16px; padding: 10px 14px; border:0; border-radius:8px; cursor:pointer; font-weight:700; }
-    #generate { background:#f3f4f6; color:#111827; }
-    #copy { background:#374151; color:#fff; margin-left:8px; }
-    pre { white-space: pre-wrap; overflow:auto; background:#0b1020; border:1px solid #374151; border-radius:8px; padding:14px; line-height:1.5; }
-    .error { color:#fca5a5; min-height:1.4em; }
-    .hint { font-size:.92rem; color:#9ca3af; }
-  </style>
-</head>
-<body>
-<main>
-  <h1>Dice Random Tester</h1>
-  <p class="muted">서로 다른 다이스와 여러 개의 주사위를 한 번에 입력하고 테스트 코드를 생성합니다.</p>
-  <section class="card">
-    <label for="dice">다이스</label>
-    <input id="dice" value="2d100u, 1d600, 3d20m5u" placeholder="예: 2d100u, 1d600, 3d20m5u">
-    <p class="hint">다이스 식은 쉼표로 구분합니다. m50은 최소값 50, u는 중복 없는 결과로 처리합니다.</p>
-    <label for="results">원하는 결과값</label>
-    <textarea id="results" placeholder="예: 40,80; 123; 5,10,15">40,80; 123; 5,10,15</textarea>
-    <p class="hint">각 다이스의 결과 그룹은 세미콜론(;)으로 구분합니다.</p>
-    <div id="error" class="error"></div>
-    <button id="generate">코드 생성</button>
-    <button id="copy" type="button">복사</button>
-    <label for="output">생성된 코드</label>
-    <pre id="output">여기에 테스트 코드가 표시됩니다.</pre>
-  </section>
-</main>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Dice Random Tester</title><style>:root{color-scheme:dark;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{margin:0;min-height:100vh;background:#111827;color:#f3f4f6}main{max-width:760px;margin:0 auto;padding:32px 20px 48px}h1{margin-bottom:8px}.muted{color:#9ca3af}.card{background:#1f2937;border:1px solid #374151;border-radius:14px;padding:20px;margin-top:20px}label{display:block;margin:14px 0 6px;font-weight:700}input,textarea{box-sizing:border-box;width:100%;background:#111827;color:#f3f4f6;border:1px solid #4b5563;border-radius:8px;padding:10px 12px;font:inherit}textarea{min-height:72px;resize:vertical}button{margin-top:16px;padding:10px 14px;border:0;border-radius:8px;cursor:pointer;font-weight:700}#generate{background:#f3f4f6;color:#111827}#copy{background:#374151;color:#fff;margin-left:8px}pre{white-space:pre-wrap;overflow:auto;background:#0b1020;border:1px solid #374151;border-radius:8px;padding:14px;line-height:1.5}.error{color:#fca5a5;min-height:1.4em}.hint{font-size:.92rem;color:#9ca3af}</style></head>
+<body><main><h1>Dice Random Tester</h1><p class="muted">서로 다른 다이스와 여러 개의 주사위를 한 번에 입력하고 테스트 코드를 생성합니다.</p><section class="card"><label for="dice">다이스</label><input id="dice" value="2d100u, 1d600, 3d20m5u" placeholder="예: 2d100u, 1d600, 3d20m5u"><p class="hint">다이스 식은 쉼표로 구분합니다. m50은 최소값 50, u는 중복 없는 결과로 처리합니다.</p><label for="results">원하는 결과값</label><textarea id="results" placeholder="예: 40,80; 123; 5,10,15">40,80; 123; 5,10,15</textarea><p class="hint">각 다이스의 결과 그룹은 세미콜론(;)으로 구분합니다.</p><div id="error" class="error"></div><button id="generate">코드 생성</button><button id="copy" type="button">복사</button><label for="output">생성된 코드</label><pre id="output">여기에 테스트 코드가 표시됩니다.</pre></section></main>
 <script>
-  const diceEl = document.querySelector('#dice');
-  const resultsEl = document.querySelector('#results');
-  const outputEl = document.querySelector('#output');
-  const errorEl = document.querySelector('#error');
-
-  function parseDice(text) {
-    const m = text.trim().match(/^(\d+)d(\d+)(?:m(\d+))?(u)?$/);
-    if (!m) throw new Error(`다이스 형식이 올바르지 않습니다: ${text}`);
-    const count = Number(m[1]);
-    const max = Number(m[2]);
-    const min = m[3] === undefined ? 1 : Number(m[3]);
-    const unique = !!m[4];
-    if (count < 1 || count > 1000) throw new Error('주사위 개수는 1~1000 사이여야 합니다.');
-    if (max < 1 || min < 1 || min > max) throw new Error(`최소/최대값을 확인하세요: ${text}`);
-    if (unique && count > max - min + 1) throw new Error(`${text}은 중복 없이 ${count}개를 뽑을 수 없습니다.`);
-    return { count, min, max, unique };
-  }
-
-  function resultToRandom(result, min, max) {
-    if (result < min || result > max) throw new Error(`${min}~${max} 범위 밖의 결과입니다: ${result}`);
-    return (result - min + 0.5) / (max - min + 1);
-  }
-
-  function uniqueResultsToRandom(results, min, max) {
-    const remaining = [];
-    for (let n = min; n <= max; n++) remaining.push(n);
-    const values = [];
-    for (const result of results) {
-      const index = remaining.indexOf(result);
-      if (index === -1) throw new Error(`${result}는 중복 없는 주사위에서 이미 사용되었거나 범위를 벗어났습니다.`);
-      values.push((index + 0.5) / remaining.length);
-      remaining.splice(index, 1);
-    }
-    return values;
-  }
-
-  function generate() {
-    errorEl.textContent = '';
-    try {
-      const diceTokens = diceEl.value.split(/\s*,\s*/).map(s => s.trim()).filter(Boolean);
-      const resultGroups = resultsEl.value.split(/\s*;\s*/).map(s => s.trim()).filter(Boolean);
-      if (!diceTokens.length) throw new Error('다이스를 입력하세요.');
-      if (diceTokens.length !== resultGroups.length) throw new Error(`다이스 ${diceTokens.length}개와 결과 그룹 ${resultGroups.length}개의 개수가 다릅니다.`);
-      const specs = diceTokens.map(parseDice);
-      const values = [];
-      for (let i = 0; i < specs.length; i++) {
-        const { count, min, max, unique } = specs[i];
-        const results = resultGroups[i].split(/\s*,\s*/).map(s => s.trim()).filter(Boolean).map(Number);
-        if (results.length !== count) throw new Error(`${diceTokens[i]}에는 결과 ${count}개가 필요합니다. 현재 ${results.length}개입니다.`);
-        if (results.some(n => !Number.isInteger(n))) throw new Error(`${diceTokens[i]}의 결과값은 정수만 입력하세요.`);
-        if (unique) {
-          if (new Set(results).size !== results.length) throw new Error(`${diceTokens[i]}은 u(중복 없음)이므로 결과값이 서로 달라야 합니다.`);
-          values.push(...uniqueResultsToRandom(results, min, max));
-        } else {
-          for (const result of results) values.push(resultToRandom(result, min, max));
-        }
-      }
-      const formatted = values.map(n => Number(n.toFixed(12)));
-      outputEl.textContent = `const __diceOriginalRandom = Math.random;\nconst __diceTestValues = [${formatted.join(', ')}];\nlet __diceIndex = 0;\nMath.random = function () {\n  const stack = new Error().stack || '';\n  if (stack.includes('sjcl.js')) return __diceOriginalRandom();\n  if (stack.includes('submitComment') && __diceIndex < __diceTestValues.length) {\n    return __diceTestValues[__diceIndex++];\n  }\n  return __diceOriginalRandom();\n};`;
-    } catch (e) {
-      outputEl.textContent = '여기에 테스트 코드가 표시됩니다.';
-      errorEl.textContent = e.message;
-    }
-  }
-
-  document.querySelector('#generate').addEventListener('click', generate);
-  document.querySelector('#copy').addEventListener('click', async () => {
-    const text = outputEl.textContent;
-    if (!text || text.startsWith('여기에')) return;
-    try { await navigator.clipboard.writeText(text); errorEl.textContent = '복사했습니다.'; }
-    catch { errorEl.textContent = '자동 복사에 실패했습니다. 코드를 직접 복사하세요.'; }
-  });
-  generate();
-</script>
-</body>
-</html>
+const diceEl=document.querySelector('#dice'),resultsEl=document.querySelector('#results'),outputEl=document.querySelector('#output'),errorEl=document.querySelector('#error');
+function parseDice(text){const m=text.trim().match(/^(\d+)d(\d+)(?:m(\d+))?(u)?$/);if(!m)throw new Error(`다이스 형식이 올바르지 않습니다: ${text}`);const count=Number(m[1]),max=Number(m[2]),min=m[3]===undefined?1:Number(m[3]),unique=!!m[4];if(count<1||count>1000)throw new Error('주사위 개수는 1~1000 사이여야 합니다.');if(max<1||min<1||min>max)throw new Error(`최소/최대값을 확인하세요: ${text}`);if(unique&&count>max-min+1)throw new Error(`${text}은 중복 없이 ${count}개를 뽑을 수 없습니다.`);return{count,min,max,unique}}
+function resultToRandom(result,min,max){if(result<min||result>max)throw new Error(`${min}~${max} 범위 밖의 결과입니다: ${result}`);return(result-min+0.5)/(max-min+1)}
+function uniqueResultsToRandom(results,min,max){const remaining=[];for(let n=min;n<=max;n++)remaining.push(n);const values=[];for(const result of results){const index=remaining.indexOf(result);if(index===-1)throw new Error(`${result}는 중복 없는 주사위에서 이미 사용되었거나 범위를 벗어났습니다.`);values.push((index+0.5)/remaining.length);remaining.splice(index,1)}return values}
+function generate(){errorEl.textContent='';try{const diceTokens=diceEl.value.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean),resultGroups=resultsEl.value.split(/\s*;\s*/).map(s=>s.trim()).filter(Boolean);if(!diceTokens.length)throw new Error('다이스를 입력하세요.');if(diceTokens.length!==resultGroups.length)throw new Error(`다이스 ${diceTokens.length}개와 결과 그룹 ${resultGroups.length}개의 개수가 다릅니다.`);const specs=diceTokens.map(parseDice),values=[];for(let i=0;i<specs.length;i++){const{count,min,max,unique}=specs[i],results=resultGroups[i].split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean).map(Number);if(results.length!==count)throw new Error(`${diceTokens[i]}에는 결과 ${count}개가 필요합니다. 현재 ${results.length}개입니다.`);if(results.some(n=>!Number.isInteger(n)))throw new Error(`${diceTokens[i]}의 결과값은 정수만 입력하세요.`);if(unique){if(new Set(results).size!==results.length)throw new Error(`${diceTokens[i]}은 u(중복 없음)이므로 결과값이 서로 달라야 합니다.`);values.push(...uniqueResultsToRandom(results,min,max))}else{for(const result of results)values.push(resultToRandom(result,min,max))}}const formatted=values.map(n=>Number(n.toFixed(12)));outputEl.textContent=`if (window.__diceTestRestore) window.__diceTestRestore();\nif (!window.__diceNativeRandom) window.__diceNativeRandom = Math.random;\nwindow.__diceTestValues = [${formatted.join(', ')}];\nwindow.__diceIndex = 0;\nwindow.__diceTestRestore = () => { Math.random = window.__diceNativeRandom; };\nMath.random = function () {\n  const stack = new Error().stack || '';\n  if (stack.includes('sjcl.js')) return window.__diceNativeRandom();\n  if (stack.includes('submitComment') && window.__diceIndex < window.__diceTestValues.length) {\n    return window.__diceTestValues[window.__diceIndex++];\n  }\n  return window.__diceNativeRandom();\n};`;}catch(e){outputEl.textContent='여기에 테스트 코드가 표시됩니다.';errorEl.textContent=e.message}}
+document.querySelector('#generate').addEventListener('click',generate);document.querySelector('#copy').addEventListener('click',async()=>{const text=outputEl.textContent;if(!text||text.startsWith('여기에'))return;try{await navigator.clipboard.writeText(text);errorEl.textContent='복사했습니다.'}catch{errorEl.textContent='자동 복사에 실패했습니다. 코드를 직접 복사하세요.'}});generate();
+</script></body></html>
