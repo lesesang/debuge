@@ -10,9 +10,9 @@
 </style>
 </head>
 <body><main>
-<header><h1>Dice Random Tester</h1><p class="desc">댓글 다이스 결과를 지정한 값으로 한 번만 재현합니다.</p></header>
+<header><h1>Dice Random Tester</h1><p class="desc">댓글의 다이스 난수만 지정한 값으로 한 번 재현합니다.</p></header>
 
-<section class="card"><h2>① 다이스와 결과 입력</h2><p class="desc">같은 줄끼리 대응합니다. 결과 개수도 정확히 맞아야 합니다.</p><div class="grid">
+<section class="card"><h2>① 다이스와 결과</h2><p class="desc">같은 줄끼리 대응합니다. 결과 개수도 정확히 맞아야 합니다.</p><div class="grid">
 <div><h2>다이스</h2><textarea id="specs" spellcheck="false" placeholder="2d100u
 1d600
 3d20m5"></textarea><p class="hint"><code>NdM</code> · <code>NdMmK</code> · 중복 없음 <code>u</code></p></div>
@@ -23,9 +23,9 @@
 
 <section class="card"><h2>② 생성된 코드</h2><p class="desc">대상 사이트 DevTools Console에 붙여넣어 실행합니다.</p><pre id="output">아직 생성된 코드가 없습니다.</pre></section>
 
-<section class="card"><h2>③ 사용법</h2><div class="guide">댓글을 먼저 써도, 코드를 먼저 실행해도 됩니다.</div><div class="guide">등록할 때 실제 <code>Math.random</code> 사용 횟수를 먼저 확인합니다.</div><div class="guide">준비한 값 수와 실제 필요한 난수 수가 정확히 같을 때만 테스트값을 적용합니다.</div><div class="guide warn">개수가 다르거나 오류가 나면 테스트값을 전혀 사용하지 않고 원래 랜덤으로 한 번 다시 실행한 뒤 테스트를 초기화합니다.</div></section>
+<section class="card"><h2>③ 사용법</h2><div class="guide">댓글을 먼저 써도, 코드를 먼저 실행해도 됩니다.</div><div class="guide">실행할 때 먼저 실제 다이스 난수 개수를 확인한 뒤, 개수가 정확히 같을 때만 테스트값을 적용합니다.</div><div class="guide warn">개수가 다르거나 테스트 중 오류가 나면 준비한 값은 사용하지 않고 기본 랜덤으로 다시 실행한 뒤 테스트를 초기화합니다.</div></section>
 
-<section class="card"><h2>④ 안전 동작</h2><div class="guide">일반 문장이나 색상·크기·글꼴 같은 서식은 건드리지 않습니다.</div><div class="guide"><code>sjcl.encrypt()</code> 내부 난수는 원래 <code>Math.random</code>을 사용합니다.</div><div class="guide">정상 완료·오류·개수 불일치·수동 중단 모두 패치를 제거하고 테스트 상태를 초기화합니다.</div><div class="guide">수동 중단: <code>window.__diceTestRestore()</code></div></section>
+<section class="card"><h2>④ 안전 동작</h2><div class="guide">일반 문장과 색상·크기·글꼴 같은 서식은 건드리지 않습니다.</div><div class="guide"><code>sjcl.encrypt()</code> 안에서 발생하는 난수는 테스트 대상에서 제외하고 원래 랜덤을 사용합니다.</div><div class="guide">정상 완료·실패·오류·수동 중단 후에는 패치를 제거합니다.</div><div class="guide">수동 중단: <code>window.__diceTestRestore()</code></div></section>
 </main>
 <script>
 const specsEl=document.querySelector('#specs');
@@ -87,14 +87,24 @@ function buildCode(values){
   const originalSubmitComment=window.submitComment;
   const originalAddComment=window.addComment;
   const originalSjclEncrypt=window.sjcl?.encrypt;
+  const source=typeof originalSubmitComment==='function'?Function.prototype.toString.call(originalSubmitComment):'';
 
   if(typeof originalSubmitComment!=='function') throw Error('submitComment()을 찾지 못했습니다.');
   if(typeof originalAddComment!=='function') throw Error('addComment()을 찾지 못했습니다.');
   if(typeof originalSjclEncrypt!=='function') throw Error('sjcl.encrypt()을 찾지 못했습니다.');
 
+  // 현재 사이트의 submitComment에는 다이스용 Math.random 호출이 직접 들어 있습니다.
+  // 다른 직접 호출이 추가되면 억지로 테스트하지 않고 기본 랜덤으로 처리합니다.
+  const directRandomCalls=(source.match(/\\bMath\\s*\\.\\s*random\\s*\\(\\s*\\)/g)||[]).length;
+  const EXPECTED_DIRECT_DICE_RANDOM_CALLS=2;
+  if(directRandomCalls!==EXPECTED_DIRECT_DICE_RANDOM_CALLS){
+    console.warn('[Dice Tester] submitComment의 난수 구조가 예상과 달라 테스트를 시작하지 않습니다. 기본 랜덤으로 실행하세요.');
+    throw Error('submitComment 난수 구조가 변경되었습니다.');
+  }
+
   const testValues=[${nums.join(',')}];
   const expected=testValues.length;
-  const state={phase:'idle',restored:false,count:0,index:0,overflow:false,inSjcl:0,context:null,args:null,savedArea:undefined,savedUser:undefined,pendingAdds:[],fallback:false,errorHandling:false};
+  const state={phase:'idle',restored:false,count:0,index:0,overflow:false,inSjcl:0,context:null,args:null,savedArea:undefined,savedUser:undefined,pendingAdds:[],fallback:false,handlingError:false};
 
   const saveInputs=()=>{
     const area=document.getElementById('commentArea');
@@ -115,8 +125,6 @@ function buildCode(values){
     window.submitComment=originalSubmitComment;
     window.addComment=originalAddComment;
     window.sjcl.encrypt=originalSjclEncrypt;
-    window.removeEventListener('error',onError);
-    window.removeEventListener('unhandledrejection',onReject);
     delete window.__diceTestRestore;
   };
 
@@ -127,6 +135,7 @@ function buildCode(values){
     detach();
     state.pendingAdds.length=0;
     state.index=0;
+    state.count=0;
     state.overflow=false;
     if(success) console.log('[Dice Tester] 테스트 성공. 테스트 상태를 초기화했습니다.');
     else if(message) console.warn('[Dice Tester] '+message);
@@ -142,37 +151,35 @@ function buildCode(values){
     state.restored=true;
     state.phase='done';
     state.pendingAdds.length=0;
-    try{
-      console.warn('[Dice Tester] '+message+' 준비한 테스트값은 하나도 사용하지 않고 기본 랜덤으로 다시 실행합니다.');
-      return originalSubmitComment.apply(context,args);
-    }catch(error){
-      console.error('[Dice Tester] 기본 랜덤 재실행도 실패했습니다.',error);
-      throw error;
-    }
+    console.warn('[Dice Tester] '+message+' 준비한 테스트값은 사용하지 않고 기본 랜덤으로 다시 실행합니다.');
+    return originalSubmitComment.apply(context,args);
   };
 
-  const fail=(message)=>{
-    if(state.restored||state.errorHandling) return;
-    state.errorHandling=true;
-    try{
-      if(state.phase==='probe'||state.phase==='test') fallback(message);
-      else cleanup(message);
-    }catch(error){
-      console.error('[Dice Tester] 정리 중 오류가 발생했습니다.',error);
-      cleanup(message);
+  const getCallerName=()=>{
+    const stack=(new Error()).stack||'';
+    const lines=stack.split('\\n').slice(1);
+    for(const line of lines){
+      if(/Math\.random|nativeRandom|__diceRandom/.test(line)) continue;
+      const m=line.match(/at\\s+([^\\s(]+)\\s*\\(/);
+      if(m) return m[1];
+      const bare=line.match(/at\\s+([^\\s]+)$/);
+      if(bare) return bare[1];
     }
+    return '';
   };
 
-  function onError(event){
-    if(state.phase==='probe'||state.phase==='test') fail('실행 중 오류가 발생했습니다.');
-  }
-  function onReject(event){
-    if(state.phase==='probe'||state.phase==='test') fail('처리되지 않은 비동기 오류가 발생했습니다.');
-  }
+  const isDirectSubmitCommentRandom=()=>{
+    if(state.inSjcl>0) return false;
+    const stack=(new Error()).stack||'';
+    const lines=stack.split('\\n').slice(1);
+    for(const line of lines){
+      if(/Math\.random|nativeRandom|__diceRandom/.test(line)) continue;
+      return /(?:^|\\s)at\\s+submitComment(?:\\s|\\(|$)/.test(line);
+    }
+    return false;
+  };
 
   window.__diceTestRestore=()=>cleanup('수동으로 테스트를 중단했습니다. 테스트 상태를 초기화했습니다.');
-  window.addEventListener('error',onError);
-  window.addEventListener('unhandledrejection',onReject);
 
   window.sjcl.encrypt=function(...args){
     state.inSjcl++;
@@ -182,6 +189,7 @@ function buildCode(values){
 
   Math.random=function(){
     if(state.restored||state.inSjcl>0) return nativeRandom();
+    if(!isDirectSubmitCommentRandom()) return nativeRandom();
     if(state.phase==='probe'){
       state.count++;
       return nativeRandom();
@@ -220,7 +228,7 @@ function buildCode(values){
     state.index=0;
     state.overflow=false;
     state.fallback=false;
-    state.errorHandling=false;
+    state.handlingError=false;
     state.phase='probe';
     saveInputs();
 
@@ -231,14 +239,14 @@ function buildCode(values){
       try{
         result=await callOriginal(state.context,state.args);
       }catch(error){
-        if(!state.restored) fallback('원래 댓글 처리 중 오류가 발생했습니다.');
+        if(!state.restored) return fallback('원래 댓글 처리 중 오류가 발생했습니다.');
         throw error;
       }
 
       if(state.restored) return result;
 
       if(state.count!==expected){
-        return fallback(`난수 개수가 다릅니다. 준비 ${expected}개 / 실제 ${state.count}개.`);
+        return fallback(`다이스 난수 개수가 다릅니다. 준비 ${expected}개 / 실제 ${state.count}개.`);
       }
 
       restoreInputs();
