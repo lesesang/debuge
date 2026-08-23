@@ -22,9 +22,9 @@
 
 <section class="card"><h2>② 테스트 코드</h2><p class="desc">생성된 코드를 대상 사이트의 DevTools Console에서 실행하세요.</p><pre id="output">아직 생성된 코드가 없습니다.</pre></section>
 
-<section class="card"><h2>③ 사용법</h2><div class="guide"><b>1.</b> 댓글에 다이스를 먼저 입력하거나, 테스트 코드를 먼저 실행합니다.</div><div class="guide"><b>2.</b> 코드가 적용된 상태에서 댓글 내용을 작성합니다.</div><div class="guide"><b>3.</b> 댓글 등록 버튼을 누릅니다.</div><div class="guide"><b>4.</b> 성공하면 지정한 결과로 등록되고 테스트는 자동 초기화됩니다.</div><div class="guide warn"><b>중요:</b> 실제 난수 개수가 준비한 개수와 다르면 테스트 결과를 등록하지 않고, 등록 직전의 댓글을 그대로 복원한 뒤 기본 랜덤으로 한 번 실행하고 테스트를 초기화합니다.</div></section>
+<section class="card"><h2>③ 사용법</h2><div class="guide"><b>1.</b> 댓글을 먼저 작성하거나 코드를 먼저 실행합니다.</div><div class="guide"><b>2.</b> 코드가 적용된 상태에서 댓글 등록 버튼을 누릅니다.</div><div class="guide"><b>3.</b> 실제 난수 개수가 정확히 맞으면 지정한 결과로 등록됩니다.</div><div class="guide warn"><b>개수 불일치:</b> 테스트 등록은 막고, 입력을 복원한 뒤 기본 랜덤으로 한 번만 등록합니다.</div></section>
 
-<section class="card"><h2>④ 동작</h2><div class="guide"><b>성공:</b> 지정한 테스트값으로 댓글을 등록하고 자동 초기화.</div><div class="guide"><b>개수 불일치:</b> 테스트 댓글 등록을 막음 → 등록 직전 입력 복원 → 기본 랜덤으로 한 번 실행 → 자동 초기화.</div><div class="guide"><b>오류:</b> 테스트를 해제하고 등록 직전 입력을 복원한 뒤 기본 랜덤으로 복구 → 자동 초기화.</div><div class="guide"><b>SJCL:</b> 암호화에 필요한 난수는 원래 난수를 사용합니다.</div><div class="guide"><b>범위:</b> 현재 브라우저의 현재 페이지에만 적용됩니다.</div></section>
+<section class="card"><h2>④ 자동 복구</h2><div class="guide"><b>정상 완료:</b> 등록 후 테스트 기능을 자동으로 제거합니다.</div><div class="guide"><b>오류:</b> 테스트값과 패치를 폐기하고 원래 랜덤으로 복구합니다.</div><div class="guide"><b>SJCL:</b> <code>sjcl.encrypt()</code> 내부 난수는 원래 난수를 사용합니다.</div><div class="guide"><b>수동:</b> <code>window.__diceTestRestore()</code></div></section>
 </main>
 <script>
 const specsEl=document.querySelector('#specs'),resultsEl=document.querySelector('#results'),outputEl=document.querySelector('#output'),statusEl=document.querySelector('#status');
@@ -34,6 +34,7 @@ function uniqueToRandom(values,min,max){const rest=[];for(let n=min;n<=max;n++)r
 function parseInput(){const specs=specsEl.value.trim().split(/\r?\n/).map(x=>x.trim()).filter(Boolean),lines=resultsEl.value.trim().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!specs.length)throw Error('다이스 설정을 입력하세요.');if(specs.length!==lines.length)throw Error(`다이스 ${specs.length}줄과 결과 ${lines.length}줄의 개수가 다릅니다.`);const out=[];specs.forEach((token,i)=>{const d=parseDice(token),rs=lines[i].split(/\s*,\s*/).filter(Boolean).map(Number);if(rs.some(Number.isNaN))throw Error(`${token}: 결과에는 숫자만 입력하세요.`);if(rs.length!==d.count)throw Error(`${token}: 결과 ${d.count}개가 필요하지만 ${rs.length}개가 입력되었습니다.`);out.push(...(d.unique?uniqueToRandom(rs,d.min,d.max):rs.map(v=>toRandom(v,d.min,d.max))));});return out;}
 function buildCode(values){const nums=values.map(v=>Number(v.toFixed(12)));return `(()=>{
   if(typeof window.__diceTestRestore==='function') window.__diceTestRestore();
+
   const nativeRandom=Math.random;
   const originalSubmitComment=window.submitComment;
   const originalAddComment=window.addComment;
@@ -45,14 +46,23 @@ function buildCode(values){const nums=values.map(v=>Number(v.toFixed(12)));retur
   const testValues=[${nums.join(',')}];
   const expectedCount=testValues.length;
   let restored=false;
-  let running=false;
+  let phase='idle';
   let randomCount=0;
   let testIndex=0;
   let testOverflow=false;
   let inSjcl=0;
-  let capturedAddComment=null;
+  let submitThis=null;
+  let submitArgs=null;
   let savedArea;
   let savedUser;
+  let pendingAdds=[];
+
+  const saveInputs=()=>{
+    const area=document.getElementById('commentArea');
+    const user=document.getElementById('commentUser');
+    savedArea=area?.value;
+    savedUser=user?.value;
+  };
 
   const restoreInputs=()=>{
     const area=document.getElementById('commentArea');
@@ -61,9 +71,10 @@ function buildCode(values){const nums=values.map(v=>Number(v.toFixed(12)));retur
     if(user&&savedUser!==undefined) user.value=savedUser;
   };
 
-  const restore=(reason='',success=false)=>{
+  const cleanup=(message,success=false)=>{
     if(restored)return;
     restored=true;
+    phase='idle';
     Math.random=nativeRandom;
     window.submitComment=originalSubmitComment;
     window.addComment=originalAddComment;
@@ -71,86 +82,125 @@ function buildCode(values){const nums=values.map(v=>Number(v.toFixed(12)));retur
     window.removeEventListener('error',onError);
     window.removeEventListener('unhandledrejection',onReject);
     delete window.__diceTestRestore;
-    if(success) console.log('[Dice Tester] 성공: 테스트값으로 댓글이 등록되었고 테스트가 초기화되었습니다.');
-    else if(reason) console.warn('[Dice Tester] '+reason+' 테스트값을 폐기하고 기본 랜덤으로 실행했습니다. 테스트가 초기화되었습니다.');
+    pendingAdds=[];
+    testIndex=0;
+    testOverflow=false;
+    if(success) console.log('[Dice Tester] 성공: 지정한 결과로 댓글이 등록되었습니다. 테스트가 초기화되었습니다.');
+    else if(message) console.warn('[Dice Tester] '+message+' 테스트가 초기화되었습니다.');
   };
 
-  const fail=reason=>restore(reason);
-  const onError=()=>fail('전역 오류가 발생했습니다.');
+  const normalFallback=(message)=>{
+    const context=submitThis;
+    const args=submitArgs;
+    restoreInputs();
+    cleanup(message||'테스트를 사용하지 않고 기본 랜덤으로 실행합니다.');
+    try{return originalSubmitComment.apply(context,args);}catch(error){console.error('[Dice Tester] 기본 랜덤 재실행도 실패했습니다.',error);throw error;}
+  };
+
+  const fail=(message)=>{
+    if(phase==='probe'||phase==='test') return normalFallback(message);
+    cleanup(message);
+  };
+
+  const onError=()=>fail('실행 중 오류가 발생했습니다.');
   const onReject=()=>fail('처리되지 않은 비동기 오류가 발생했습니다.');
   window.addEventListener('error',onError);
   window.addEventListener('unhandledrejection',onReject);
-  window.__diceTestRestore=()=>restore('수동 초기화로');
+  window.__diceTestRestore=()=>cleanup('수동 초기화로 테스트를 중단했습니다.');
 
   window.sjcl.encrypt=function(...args){
     inSjcl++;
-    try{return originalSjclEncrypt.apply(this,args);}
-    finally{inSjcl--;}
+    try{return originalSjclEncrypt.apply(this,args);}finally{inSjcl--;}
   };
 
   Math.random=function(){
-    if(restored||!running||inSjcl>0) return nativeRandom();
-    randomCount++;
-    if(testIndex<expectedCount) return testValues[testIndex++];
-    testOverflow=true;
+    if(restored||inSjcl>0) return nativeRandom();
+    if(phase==='probe'){
+      randomCount++;
+      return nativeRandom();
+    }
+    if(phase==='test'){
+      randomCount++;
+      if(testIndex<expectedCount) return testValues[testIndex++];
+      testOverflow=true;
+      return nativeRandom();
+    }
     return nativeRandom();
   };
 
   window.addComment=function(...args){
-    if(running){capturedAddComment={self:this,args};return;}
+    if(phase==='probe'||phase==='test'){
+      pendingAdds.push({self:this,args});
+      return undefined;
+    }
     return originalAddComment.apply(this,args);
   };
 
   window.submitComment=function(...args){
-    if(restored||running) return originalSubmitComment.apply(this,args);
+    if(restored) return originalSubmitComment.apply(this,args);
+    if(phase!=='idle') return originalSubmitComment.apply(this,args);
 
-    const area=document.getElementById('commentArea');
-    const user=document.getElementById('commentUser');
-    savedArea=area?.value;
-    savedUser=user?.value;
-
-    running=true;
+    submitThis=this;
+    submitArgs=args;
+    saveInputs();
+    pendingAdds=[];
     randomCount=0;
     testIndex=0;
     testOverflow=false;
-    capturedAddComment=null;
+    phase='probe';
 
-    try{
-      const result=originalSubmitComment.apply(this,args);
-      if(result&&typeof result.then==='function'){
-        return result.then(()=>finish(args),e=>{
-          restoreInputs();
-          running=false;
-          restore('submitComment()의 비동기 처리에서 오류가 발생했습니다.');
-          try{originalSubmitComment.apply(this,args);}catch(_){ }
-          throw e;
-        });
+    return runSubmit(args,submitThis).catch(error=>{
+      if(!restored){
+        try{normalFallback('submitComment() 실행 중 오류가 발생했습니다.');}catch(_){ }
       }
-      return finish(args,result);
-    }catch(e){
-      restoreInputs();
-      running=false;
-      restore('테스트 실행 중 오류가 발생했습니다.');
-      try{originalSubmitComment.apply(this,args);}catch(_){ }
-      throw e;
-    }
+      throw error;
+    });
   };
 
-  function finish(args,result){
-    const exact=!testOverflow&&testIndex===expectedCount&&randomCount===expectedCount;
-
-    if(exact){
-      running=false;
-      const pending=capturedAddComment;
-      restore('',true);
-      if(pending) return originalAddComment.apply(pending.self,pending.args);
-      return result;
+  async function runSubmit(args,context){
+    let result;
+    try{
+      result=originalSubmitComment.apply(context,args);
+      if(result&&typeof result.then==='function') await result;
+    }catch(error){
+      if(!restored) normalFallback('submitComment() 실행 중 오류가 발생했습니다.');
+      throw error;
     }
 
-    restoreInputs();
-    running=false;
-    restore(`난수 개수 불일치: 준비 ${expectedCount}개 / 실제 ${randomCount}개.`);
-    try{return originalSubmitComment.apply(this,args);}catch(e){console.error('[Dice Tester] 랜덤 복구 실행도 실패했습니다.',e);throw e;}
+    if(restored) return result;
+
+    if(phase==='probe'){
+      if(randomCount!==expectedCount){
+        return normalFallback(`난수 개수 불일치: 준비 ${expectedCount}개 / 실제 ${randomCount}개. 테스트를 사용하지 않습니다.`);
+      }
+
+      restoreInputs();
+      pendingAdds=[];
+      randomCount=0;
+      testIndex=0;
+      testOverflow=false;
+      phase='test';
+
+      try{
+        result=originalSubmitComment.apply(context,args);
+        if(result&&typeof result.then==='function') await result;
+      }catch(error){
+        if(!restored) return normalFallback('테스트 실행 중 오류가 발생했습니다.');
+        throw error;
+      }
+
+      if(!restored&&phase==='test'){
+        if(testOverflow||testIndex!==expectedCount||randomCount!==expectedCount){
+          return normalFallback(`테스트 난수 개수 불일치: 준비 ${expectedCount}개 / 실제 ${randomCount}개.`);
+        }
+
+        const adds=pendingAdds.slice();
+        cleanup('',true);
+        for(const add of adds) originalAddComment.apply(add.self,add.args);
+      }
+    }
+
+    return result;
   }
 
   console.log('[Dice Tester] 적용 완료. 댓글을 먼저 작성했든 코드를 먼저 실행했든 등록 버튼을 누르면 테스트합니다.');
