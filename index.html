@@ -21,11 +21,11 @@ label{display:block;font-weight:700;margin:0 0 7px}textarea{width:100%;min-heigh
     <div class="grid">
       <div>
         <h2>① 다이스 설정 <span class="badge">굴리는 값</span></h2>
-        <p class="section-desc">한 줄에 하나씩 입력합니다. 순서대로 오른쪽 결과와 대응합니다.</p>
+        <p class="section-desc">한 줄에 하나씩 입력합니다. 아래 결과와 같은 순서로 대응합니다.</p>
         <textarea id="specs" spellcheck="false" placeholder="2d100u
 1d600
 3d20m5"></textarea>
-        <p class="hint">지원: <span class="examples">NdM</span>, <span class="examples">NdMmK</span>, 끝에 <span class="examples">u</span> / <span class="examples">s</span></p>
+        <p class="hint">지원: <span class="examples">NdM</span>, <span class="examples">NdMmK</span>, 끝에 <span class="examples">u</span></p>
       </div>
       <div>
         <h2>② 원하는 결과 <span class="badge">나와야 하는 값</span></h2>
@@ -54,10 +54,10 @@ label{display:block;font-weight:700;margin:0 0 7px}textarea{width:100%;min-heigh
   <section class="card guide">
     <h2>사용법</h2>
     <div class="guide-item"><b>1. 다이스 설정</b><br><code>2d100u</code>처럼 실제 댓글에 넣을 다이스 문법을 입력합니다.</div>
-    <div class="guide-item"><b>2. 원하는 결과</b><br>위 설정과 같은 줄에 대응하도록 <code>40,80</code>처럼 기대 결과를 입력합니다.</div>
-    <div class="guide-item"><b>3. 코드 생성 → 대상 페이지 Console에 붙여넣기</b><br>그 다음 실제로 댓글을 등록하면 지정한 순서대로 다이스 결과가 나오도록 테스트됩니다.</div>
-    <div class="guide-item"><b>난수 처리 방식</b><br>이 버전은 <code>Error().stack</code> 문자열을 보고 <code>sjcl.js</code>나 <code>submitComment</code>를 추측하지 않습니다. 대신 <code>submitComment</code>을 명시적으로 감싸서 그 실행 중에만 테스트 난수를 사용하고, <code>sjcl.encrypt()</code>는 별도로 감싸 암호화에 필요한 난수는 항상 원래 난수를 사용하게 합니다.</div>
-    <div class="guide-item"><b>테스트 종료</b><br><code>window.__diceTestRestore()</code>를 실행하면 패치한 <code>Math.random</code>, <code>submitComment</code>, <code>sjcl.encrypt</code>을 모두 원래 함수로 복구하고 테스트 상태도 삭제합니다.</div>
+    <div class="guide-item"><b>2. 원하는 결과</b><br><code>40,80</code>처럼 실제로 나오게 할 값을 같은 줄에 입력합니다.</div>
+    <div class="guide-item"><b>3. 코드 생성 → 대상 페이지 Console에 붙여넣기</b><br>그 뒤 댓글을 등록하면 지정한 순서대로 결과가 나옵니다.</div>
+    <div class="guide-item"><b>난수 처리</b><br>다이스 계산은 테스트 값, <code>sjcl.encrypt()</code>는 원래 난수를 사용합니다. <code>Error().stack</code>으로 파일명이나 함수명을 추측하지 않습니다.</div>
+    <div class="guide-item"><b>테스트 종료</b><br><code>window.__diceTestRestore()</code>를 실행하면 패치한 함수와 테스트 상태를 전부 원래대로 복구합니다.</div>
   </section>
 </main>
 <script>
@@ -67,13 +67,13 @@ const outputEl=document.querySelector('#output');
 const statusEl=document.querySelector('#status');
 
 function diceSpec(token){
-  const m=token.trim().match(/^(\d+)d(\d+)(?:m(\d+))?([su]{0,2})$/);
+  const m=token.trim().match(/^(\d+)d(\d+)(?:m(\d+))?(u)?$/);
   if(!m) throw new Error(`다이스 형식이 올바르지 않습니다: ${token}`);
-  const count=+m[1], max=+m[2], min=m[3]===undefined?1:+m[3], flags=m[4]||'';
+  const count=+m[1],max=+m[2],min=m[3]===undefined?1:+m[3],unique=!!m[4];
   if(count<1||count>50) throw new Error(`${token}: 주사위 개수는 1~50입니다.`);
   if(max<1||max>10000||min<0||min>9999||min>max) throw new Error(`${token}: 최소/최대값을 확인하세요.`);
-  if(flags.includes('u')&&count>max-min+1) throw new Error(`${token}: u에서는 ${count}개를 중복 없이 뽑을 수 없습니다.`);
-  return {token,count,max,min,unique:flags.includes('u')};
+  if(unique&&count>max-min+1) throw new Error(`${token}: u에서는 ${count}개를 중복 없이 뽑을 수 없습니다.`);
+  return {count,max,min,unique};
 }
 
 function toRandom(value,min,max){
@@ -101,39 +101,31 @@ function parseInput(){
   if(specs.length!==resultLines.length) throw new Error(`다이스 설정 ${specs.length}줄과 결과 ${resultLines.length}줄의 개수가 다릅니다.`);
 
   const values=[];
-  const rows=[];
   specs.forEach((token,i)=>{
     const spec=diceSpec(token);
     const results=resultLines[i].split(/\s*,\s*/).filter(Boolean).map(Number);
     if(results.length!==spec.count) throw new Error(`${token}: 결과 ${spec.count}개가 필요하지만 ${results.length}개가 입력되었습니다.`);
-    const randoms=spec.unique?uniqueToRandom(results,spec.min,spec.max):results.map(v=>toRandom(v,spec.min,spec.max));
-    values.push(...randoms);
-    rows.push(`${token}  →  ${results.join(', ')}`);
+    values.push(...(spec.unique
+      ? uniqueToRandom(results,spec.min,spec.max)
+      : results.map(v=>toRandom(v,spec.min,spec.max))));
   });
-  return {values,rows};
+  return values;
 }
 
 function generate(){
   statusEl.className='status';
   statusEl.textContent='';
   try{
-    const {values}=parseInput();
+    const values=parseInput();
     const nums=values.map(v=>Number(v.toFixed(12)));
     outputEl.textContent=`(()=>{
-  // 기존 테스트가 있다면 먼저 완전히 복구
   if(window.__diceTestRestore) window.__diceTestRestore();
-
   if(!window.__diceNativeRandom) window.__diceNativeRandom=Math.random;
 
   const originalSubmitComment=window.submitComment;
   const originalSjclEncrypt=window.sjcl?.encrypt;
-
-  if(typeof originalSubmitComment !== 'function'){
-    throw new Error('submitComment()을 찾지 못했습니다. 대상 페이지가 완전히 로드된 뒤 다시 실행하세요.');
-  }
-  if(typeof originalSjclEncrypt !== 'function'){
-    throw new Error('sjcl.encrypt()을 찾지 못했습니다. 대상 페이지의 sjcl.js 로딩을 확인하세요.');
-  }
+  if(typeof originalSubmitComment!=='function') throw new Error('submitComment()을 찾지 못했습니다.');
+  if(typeof originalSjclEncrypt!=='function') throw new Error('sjcl.encrypt()을 찾지 못했습니다.');
 
   window.__diceTestValues=[${nums.join(', ')}];
   window.__diceIndex=0;
@@ -144,55 +136,37 @@ function generate(){
     Math.random=window.__diceNativeRandom;
     window.submitComment=originalSubmitComment;
     window.sjcl.encrypt=originalSjclEncrypt;
-
     delete window.__diceTestValues;
     delete window.__diceIndex;
     delete window.__diceInSubmitComment;
     delete window.__diceInSjclEncrypt;
     delete window.__diceTestRestore;
-
     console.log('[Dice Tester] 원래 상태로 복구했습니다.');
   };
 
-  // submitComment의 실행 범위를 직접 표시한다.
-  // 더 이상 Error().stack의 함수명 문자열에 의존하지 않는다.
   window.submitComment=function(...args){
     const previous=window.__diceInSubmitComment;
     window.__diceInSubmitComment=true;
-    try{
-      return originalSubmitComment.apply(this,args);
-    } finally{
-      window.__diceInSubmitComment=previous;
-    }
+    try{return originalSubmitComment.apply(this,args)}
+    finally{window.__diceInSubmitComment=previous}
   };
 
-  // sjcl.encrypt 내부에서는 테스트 난수를 사용하지 않는다.
-  // 따라서 sjcl.js 파일명/스택 문자열 판별이 필요 없다.
   window.sjcl.encrypt=function(...args){
     const previous=window.__diceInSjclEncrypt;
     window.__diceInSjclEncrypt=true;
-    try{
-      return originalSjclEncrypt.apply(this,args);
-    } finally{
-      window.__diceInSjclEncrypt=previous;
-    }
+    try{return originalSjclEncrypt.apply(this,args)}
+    finally{window.__diceInSjclEncrypt=previous}
   };
 
   Math.random=function(){
-    if(window.__diceInSjclEncrypt){
-      return window.__diceNativeRandom();
-    }
-
-    if(window.__diceInSubmitComment &&
-       window.__diceIndex < window.__diceTestValues.length){
+    if(window.__diceInSjclEncrypt) return window.__diceNativeRandom();
+    if(window.__diceInSubmitComment&&window.__diceIndex<window.__diceTestValues.length){
       return window.__diceTestValues[window.__diceIndex++];
     }
-
     return window.__diceNativeRandom();
   };
 
-  console.log('[Dice Tester] 적용 완료:', window.__diceTestValues.length, '개의 테스트 난수');
-  console.log('[Dice Tester] 남은 값:', window.__diceTestValues.length-window.__diceIndex);
+  console.log('[Dice Tester] 적용 완료:',window.__diceTestValues.length,'개의 테스트 난수');
 })();`;
     statusEl.className='status success';
     statusEl.textContent=`생성 완료 · ${values.length}개의 테스트 난수를 준비했습니다.`;
