@@ -64,6 +64,19 @@
     return (result - min + 0.5) / (max - min + 1);
   }
 
+  function uniqueResultsToRandom(results, min, max) {
+    const remaining = [];
+    for (let n = min; n <= max; n++) remaining.push(n);
+    const values = [];
+    for (const result of results) {
+      const index = remaining.indexOf(result);
+      if (index === -1) throw new Error(`${result}는 중복 없는 주사위에서 이미 사용되었거나 범위를 벗어났습니다.`);
+      values.push((index + 0.5) / remaining.length);
+      remaining.splice(index, 1);
+    }
+    return values;
+  }
+
   function generate() {
     errorEl.textContent = '';
     try {
@@ -78,8 +91,12 @@
         const results = resultGroups[i].split(/\s*,\s*/).map(s => s.trim()).filter(Boolean).map(Number);
         if (results.length !== count) throw new Error(`${diceTokens[i]}에는 결과 ${count}개가 필요합니다. 현재 ${results.length}개입니다.`);
         if (results.some(n => !Number.isInteger(n))) throw new Error(`${diceTokens[i]}의 결과값은 정수만 입력하세요.`);
-        if (unique && new Set(results).size !== results.length) throw new Error(`${diceTokens[i]}은 u(중복 없음)이므로 결과값이 서로 달라야 합니다.`);
-        for (const result of results) values.push(resultToRandom(result, min, max));
+        if (unique) {
+          if (new Set(results).size !== results.length) throw new Error(`${diceTokens[i]}은 u(중복 없음)이므로 결과값이 서로 달라야 합니다.`);
+          values.push(...uniqueResultsToRandom(results, min, max));
+        } else {
+          for (const result of results) values.push(resultToRandom(result, min, max));
+        }
       }
       const formatted = values.map(n => Number(n.toFixed(12)));
       outputEl.textContent = `const __diceOriginalRandom = Math.random;\nconst __diceTestValues = [${formatted.join(', ')}];\nlet __diceIndex = 0;\nMath.random = function () {\n  const stack = new Error().stack || '';\n  if (stack.includes('sjcl.js')) return __diceOriginalRandom();\n  if (stack.includes('submitComment') && __diceIndex < __diceTestValues.length) {\n    return __diceTestValues[__diceIndex++];\n  }\n  return __diceOriginalRandom();\n};`;
