@@ -42,91 +42,33 @@ function generate(){statusEl.className='status';statusEl.textContent='';try{cons
   if(typeof originalSubmitComment!=='function') throw new Error('submitComment()을 찾지 못했습니다.');
   if(typeof originalAddComment!=='function') throw new Error('addComment()을 찾지 못했습니다.');
   if(typeof originalSjclEncrypt!=='function') throw new Error('sjcl.encrypt()을 찾지 못했습니다.');
-
   const testValues=[${nums.join(', ')}];
   const expectedCount=testValues.length;
-  let restored=false;
-  let phase='probe';
-  let randomCount=0;
-  let testIndex=0;
-  let inSjclEncrypt=0;
-  let inSubmitComment=0;
-  let finishScheduled=false;
-  const savedValues={
-    commentArea:document.getElementById('commentArea')?.value,
-    commentUser:document.getElementById('commentUser')?.value
-  };
-
-  const restore=(reason,success=false)=>{
-    if(restored)return;
-    restored=true;
-    Math.random=nativeRandom;
-    window.submitComment=originalSubmitComment;
-    window.addComment=originalAddComment;
-    window.sjcl.encrypt=originalSjclEncrypt;
-    window.removeEventListener('error',onError);
-    window.removeEventListener('unhandledrejection',onUnhandledRejection);
-    delete window.__diceTestRestore;
-    testIndex=0;
-    if(success) console.log('[Dice Tester] 성공: '+expectedCount+'개 난수를 정확히 사용했습니다. 테스트가 초기화되었습니다.');
-    else if(reason) console.warn('[Dice Tester] '+reason+' 기본 랜덤으로 처리하고 테스트를 초기화했습니다.');
-  };
-  const fail=reason=>restore(reason,false);
-  const onError=()=>fail('전역 오류가 발생했습니다.');
-  const onUnhandledRejection=()=>fail('처리되지 않은 비동기 오류가 발생했습니다.');
-  const restoreInputs=()=>{
-    const area=document.getElementById('commentArea'),user=document.getElementById('commentUser');
-    if(area&&savedValues.commentArea!==undefined)area.value=savedValues.commentArea;
-    if(user&&savedValues.commentUser!==undefined)user.value=savedValues.commentUser;
-  };
-  const finishProbe=()=>{
-    if(restored)return;
-    if(randomCount!==expectedCount){
-      phase='normal';
-      restoreInputs();
-      randomCount=0;
-      console.warn('[Dice Tester] 난수 개수 불일치: 준비 '+expectedCount+'개 / 실제 '+randomCount+'개. 테스트값을 버리고 기본 랜덤으로 다시 실행합니다.');
-      try{originalSubmitComment.apply(this,argsForSubmit);}catch(error){fail('기본 랜덤 재실행 중 오류가 발생했습니다.');throw error}
-      restore('난수 개수가 달라 기본 랜덤으로 실행했습니다.',false);
-      return;
-    }
-    phase='test';
-    restoreInputs();
-    testIndex=0;
-    randomCount=0;
-    try{originalSubmitComment.apply(this,argsForSubmit)}catch(error){fail('테스트 실행 중 오류가 발생했습니다.');throw error}
-    if(!restored&&randomCount===expectedCount)restore('',true);
-    else if(!restored){restoreInputs();try{originalSubmitComment.apply(this,argsForSubmit)}finally{restore('테스트 중 난수 개수가 변해 기본 랜덤으로 실행했습니다.',false)}}
-  };
-
-  window.__diceTestRestore=()=>restore('수동 초기화로');
-  window.addEventListener('error',onError);
-  window.addEventListener('unhandledrejection',onUnhandledRejection);
-
-  Math.random=function(){
-    if(restored)return nativeRandom();
-    if(inSjclEncrypt>0)return nativeRandom();
-    if(inSubmitComment>0){
-      if(phase==='probe'){randomCount++;return nativeRandom();}
-      if(phase==='test')return testIndex<expectedCount?testValues[testIndex++]:nativeRandom();
-    }
-    return nativeRandom();
-  };
+  let restored=false,phase='probe',randomCount=0,testIndex=0,inSjclEncrypt=0,inSubmitComment=0;
+  let argsForSubmit=null;
+  const area=document.getElementById('commentArea'),user=document.getElementById('commentUser');
+  const savedArea=area?.value,savedUser=user?.value;
+  const restoreInputs=()=>{if(area&&savedArea!==undefined)area.value=savedArea;if(user&&savedUser!==undefined)user.value=savedUser};
+  const restore=(reason,success=false)=>{if(restored)return;restored=true;Math.random=nativeRandom;window.submitComment=originalSubmitComment;window.addComment=originalAddComment;window.sjcl.encrypt=originalSjclEncrypt;window.removeEventListener('error',onError);window.removeEventListener('unhandledrejection',onUnhandledRejection);delete window.__diceTestRestore;testIndex=0;if(success)console.log('[Dice Tester] 성공: '+expectedCount+'개 난수를 정확히 사용했습니다. 테스트가 초기화되었습니다.');else if(reason)console.warn('[Dice Tester] '+reason+' 테스트값을 폐기하고 기본 랜덤으로 실행했습니다. 테스트가 초기화되었습니다.');};
+  const fail=reason=>restore(reason,false),onError=()=>fail('전역 오류가 발생했습니다.'),onUnhandledRejection=()=>fail('처리되지 않은 비동기 오류가 발생했습니다.');
+  window.__diceTestRestore=()=>restore('수동 초기화로');window.addEventListener('error',onError);window.addEventListener('unhandledrejection',onUnhandledRejection);
+  Math.random=function(){if(restored)return nativeRandom();if(inSjclEncrypt>0)return nativeRandom();if(inSubmitComment>0){if(phase==='probe'){randomCount++;return nativeRandom();}if(phase==='test'){if(testIndex<expectedCount){randomCount++;return testValues[testIndex++];}return nativeRandom();}}return nativeRandom();};
   window.sjcl.encrypt=function(...args){inSjclEncrypt++;try{return originalSjclEncrypt.apply(this,args)}finally{inSjclEncrypt--;}};
   window.addComment=function(){if(phase==='probe')return;return originalAddComment.apply(this,arguments)};
-
-  let argsForSubmit;
-  window.submitComment=function(...args){
-    if(restored)return originalSubmitComment.apply(this,args);
-    argsForSubmit=args;
-    inSubmitComment++;
-    let result;
-    try{result=originalSubmitComment.apply(this,args)}catch(error){inSubmitComment--;restoreInputs();try{originalSubmitComment.apply(this,args)}finally{fail('submitComment() 실행 중 오류가 발생했습니다.')}throw error}
-    const finish=()=>{queueMicrotask(()=>{inSubmitComment=Math.max(0,inSubmitComment-1);if(inSubmitComment>0||restored)return;if(phase==='probe')finishProbe();else if(phase==='test'){if(testIndex===expectedCount)restore('',true);else{restoreInputs();try{originalSubmitComment.apply(this,argsForSubmit)}finally{restore('테스트 난수 개수가 달라 기본 랜덤으로 실행했습니다.')}}}})};
-    if(result&&typeof result.then==='function')return result.then(v=>{finish();return v},e=>{finish();throw e});
+  window.submitComment=function(...args){if(restored)return originalSubmitComment.apply(this,args);argsForSubmit=args;inSubmitComment++;let result;try{result=originalSubmitComment.apply(this,args)}catch(error){inSubmitComment--;restoreInputs();try{originalSubmitComment.apply(this,args)}finally{fail('submitComment() 실행 중 오류가 발생했습니다.')}throw error}finally{inSubmitComment--;}
+    if(result&&typeof result.then==='function')return result.then(v=>finish(),e=>{fail('submitComment()의 비동기 처리에서 오류가 발생했습니다.');throw e});
     finish();return result;
   };
-  console.log('[Dice Tester] 적용 완료: 실제 난수 개수를 먼저 확인합니다. 개수가 정확히 일치할 때만 테스트값을 사용합니다.');
+  function finish(){if(restored||!argsForSubmit)return;
+    if(phase==='probe'){
+      restoreInputs();
+      if(randomCount!==expectedCount){const actual=randomCount;phase='normal';randomCount=0;try{originalSubmitComment.apply(null,argsForSubmit)}finally{restore('난수 개수 불일치: 준비 '+expectedCount+'개 / 실제 '+actual+'개.');}return;}
+      phase='test';testIndex=0;randomCount=0;restoreInputs();inSubmitComment++;
+      try{originalSubmitComment.apply(null,argsForSubmit)}catch(error){restoreInputs();try{originalSubmitComment.apply(null,argsForSubmit)}finally{fail('테스트 실행 중 오류가 발생했습니다.')}return}finally{inSubmitComment--;}
+      if(testIndex===expectedCount)restore('',true);else{const actual=testIndex;restoreInputs();phase='normal';try{originalSubmitComment.apply(null,argsForSubmit)}finally{restore('테스트 재실행에서 난수 개수 불일치: 준비 '+expectedCount+'개 / 실제 '+actual+'개.');}}
+    }
+  }
+  console.log('[Dice Tester] 적용 완료: 먼저 실제 난수 개수를 확인합니다. 개수가 정확히 일치할 때만 테스트값을 사용합니다.');
 })();`;
 statusEl.className='status success';statusEl.textContent=`생성 완료 · ${values.length}개의 테스트 난수`}catch(error){outputEl.textContent='아직 생성된 코드가 없습니다.';statusEl.className='status error';statusEl.textContent=`테스트를 만들지 않았습니다: ${error.message}`}}
 document.querySelector('#generate').addEventListener('click',generate);
