@@ -12,7 +12,7 @@
     .muted { color: #9ca3af; }
     .card { background: #1f2937; border: 1px solid #374151; border-radius: 14px; padding: 20px; margin-top: 20px; }
     label { display:block; margin: 14px 0 6px; font-weight: 700; }
-    input, textarea { box-sizing: border-box; width: 100%; background:#111827; color:#f3f4f6; border:1px solid #4b5563; border-radius:8px; padding:10px 12px; font: inherit; }
+    input { box-sizing: border-box; width: 100%; background:#111827; color:#f3f4f6; border:1px solid #4b5563; border-radius:8px; padding:10px 12px; font: inherit; }
     button { margin-top: 16px; padding: 10px 14px; border:0; border-radius:8px; cursor:pointer; font-weight:700; }
     #generate { background:#f3f4f6; color:#111827; }
     #copy { background:#374151; color:#fff; margin-left:8px; }
@@ -24,16 +24,16 @@
 <body>
 <main>
   <h1>Dice Random Tester</h1>
-  <p class="muted">서로 다른 다이스를 한 번에 입력하고, 각 주사위의 원하는 결과에 맞는 테스트 코드를 생성합니다.</p>
+  <p class="muted">서로 다른 다이스를 한 번에 입력하고, 각 결과에 맞는 테스트 코드를 생성합니다.</p>
 
   <section class="card">
     <label for="dice">다이스</label>
-    <input id="dice" value="1d600, 1d1000" placeholder="예: 1d600, 1d1000 또는 2d100m50">
-    <p class="hint">여러 다이스는 쉼표로 구분합니다. 순서대로 Math.random() 호출에 대응합니다.</p>
+    <input id="dice" value="1d600, 1d1000" placeholder="예: 1d600, 1d1000">
+    <p class="hint">여러 다이스는 쉼표, +, 줄바꿈 중 하나로 구분할 수 있습니다.</p>
 
     <label for="results">원하는 결과값</label>
     <input id="results" value="123, 777" placeholder="예: 123, 777">
-    <p class="hint">다이스와 같은 순서로 쉼표로 구분합니다. 예: 1d600, 1d1000 → 123, 777</p>
+    <p class="hint">다이스와 같은 순서로 입력하세요. 예: 1d600, 1d1000 → 123, 777</p>
 
     <div id="error" class="error"></div>
     <button id="generate">코드 생성</button>
@@ -51,7 +51,7 @@
 
   function parseDice(text) {
     const m = text.trim().match(/^(\d+)d(\d+)(?:m(\d+))?$/i);
-    if (!m) throw new Error(`다이스 형식이 올바르지 않습니다: ${text}. 예: 1d20, 2d100m50`);
+    if (!m) throw new Error(`다이스 형식이 올바르지 않습니다: ${text}`);
     const count = Number(m[1]);
     const max = Number(m[2]);
     const min = m[3] === undefined ? 1 : Number(m[3]);
@@ -68,8 +68,8 @@
   function generate() {
     errorEl.textContent = '';
     try {
-      const diceTokens = diceEl.value.split(',').map(s => s.trim()).filter(Boolean);
-      const resultTokens = resultsEl.value.split(',').map(s => s.trim()).filter(Boolean);
+      const diceTokens = diceEl.value.split(/\s*(?:,|\+)\s*|\n+/).map(s => s.trim()).filter(Boolean);
+      const resultTokens = resultsEl.value.split(/\s*(?:,|\+)\s*|\n+/).map(s => s.trim()).filter(Boolean);
       if (!diceTokens.length) throw new Error('다이스를 입력하세요.');
       if (diceTokens.length !== resultTokens.length) throw new Error(`다이스 ${diceTokens.length}개와 결과 ${resultTokens.length}개의 개수가 다릅니다.`);
 
@@ -80,16 +80,13 @@
       const values = [];
       for (let i = 0; i < specs.length; i++) {
         const { count, min, max } = specs[i];
-        const result = results[i];
-        // 각 입력 다이스가 1개 주사위라고 가정한 혼합 다이스 모드.
-        // 2d100처럼 여러 주사위가 필요한 경우 결과도 2개를 별도로 입력할 수 있도록
-        // 다이스 토큰을 분리해서 입력: 1d100, 1d100
-        if (count !== 1) throw new Error(`${diceTokens[i]}은 여러 주사위를 포함합니다. 혼합 입력에서는 1dN 단위로 나눠 입력하세요. 예: 1d600, 1d1000`);
-        values.push(resultToRandom(result, min, max));
+        if (count !== 1) throw new Error(`${diceTokens[i]}은 여러 주사위입니다. 혼합 테스트에서는 1dN 단위로 입력하세요.`);
+        values.push(resultToRandom(results[i], min, max));
       }
 
       const formatted = values.map(n => Number(n.toFixed(12)));
-      outputEl.textContent = `const values = [${formatted.join(', ')}];\nMath.random = () => values.shift();`;
+      // const 재선언 오류를 피하므로 페이지 새로고침 없이 여러 번 실행 가능.
+      outputEl.textContent = `window.__diceTestValues = [${formatted.join(', ')}];\nMath.random = () => window.__diceTestValues.shift();`;
     } catch (e) {
       outputEl.textContent = '여기에 테스트 코드가 표시됩니다.';
       errorEl.textContent = e.message;
