@@ -85,8 +85,7 @@
       }
 
       const formatted = values.map(n => Number(n.toFixed(12)));
-      // const 재선언 오류를 피하므로 페이지 새로고침 없이 여러 번 실행 가능.
-      outputEl.textContent = `window.__diceTestValues = [${formatted.join(', ')}];\nMath.random = () => window.__diceTestValues.shift();`;
+      outputEl.textContent = `const __diceOriginalRandom = Math.random;\nconst __diceTestValues = [${formatted.join(', ')}];\nlet __diceIndex = 0;\nMath.random = function () {\n  const stack = new Error().stack || '';\n  // 네 사이트의 로그에서 SJCL 암호화가 별도로 Math.random()을 호출하는 것이 확인됨.\n  // 암호화용 난수는 건드리지 않고, submitComment에서 직접 호출되는 다이스만 순서대로 지정.\n  if (stack.includes('sjcl.js')) return __diceOriginalRandom();\n  if (stack.includes('submitComment') && __diceIndex < __diceTestValues.length) {\n    return __diceTestValues[__diceIndex++];\n  }\n  return __diceOriginalRandom();\n};`;
     } catch (e) {
       outputEl.textContent = '여기에 테스트 코드가 표시됩니다.';
       errorEl.textContent = e.message;
