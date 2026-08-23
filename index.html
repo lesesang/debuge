@@ -23,9 +23,9 @@
 
 <section class="card"><h2>② 생성된 코드</h2><p class="desc">대상 사이트 DevTools Console에 붙여넣어 실행합니다.</p><pre id="output">아직 생성된 코드가 없습니다.</pre></section>
 
-<section class="card"><h2>③ 사용법</h2><div class="guide">댓글을 먼저 써도, 코드를 먼저 실행해도 됩니다.</div><div class="guide">등록할 때 실제 필요한 다이스 난수 개수를 먼저 확인합니다.</div><div class="guide">준비한 값 수와 실제 다이스 난수 수가 정확히 같을 때만 테스트값을 적용합니다.</div><div class="guide warn">개수가 다르거나 지원하지 않는 난수가 섞이면 테스트값을 사용하지 않고 기본 랜덤으로 한 번 다시 실행합니다.</div></section>
+<section class="card"><h2>③ 사용법</h2><div class="guide">댓글을 먼저 써도, 코드를 먼저 실행해도 됩니다.</div><div class="guide">준비한 값 수와 실제 필요한 다이스 난수 수가 정확히 같을 때만 테스트값을 사용합니다.</div><div class="guide warn">개수가 다르거나 지원하지 않는 난수가 섞이면 테스트값을 버리고 기본 랜덤으로 다시 실행합니다.</div></section>
 
-<section class="card"><h2>④ 안전 동작</h2><div class="guide">일반 문장과 색상·크기·글꼴 같은 서식은 건드리지 않습니다.</div><div class="guide"><code>sjcl.encrypt()</code> 내부 난수는 테스트 대상에서 제외하고 원래 랜덤을 사용합니다.</div><div class="guide">코인 다이스는 지원하지 않으며, 발견되면 테스트하지 않고 기본 랜덤으로 실행합니다.</div><div class="guide">성공·실패·오류·수동 중단 후에는 테스트 패치를 제거합니다.</div><div class="guide">수동 중단: <code>window.__diceTestRestore()</code></div></section>
+<section class="card"><h2>④ 안전 동작</h2><div class="guide">일반 문장과 색상·크기·글꼴 같은 서식은 건드리지 않습니다.</div><div class="guide"><code>sjcl.encrypt()</code> 내부 난수는 테스트값에서 제외하고 원래 랜덤을 사용합니다.</div><div class="guide">코인 다이스는 지원하지 않으며, 발견되면 테스트하지 않습니다.</div><div class="guide">성공·실패·오류·수동 중단 후 테스트 상태를 초기화합니다.</div><div class="guide">수동 중단: <code>window.__diceTestRestore()</code></div></section>
 </main>
 <script>
 const specsEl=document.querySelector('#specs');
@@ -36,10 +36,7 @@ const statusEl=document.querySelector('#status');
 function parseDice(token){
   const m=token.trim().match(/^(\d+)d(\d+)(?:m(\d+))?(u)?$/);
   if(!m) throw Error(`다이스 형식이 올바르지 않습니다: ${token}`);
-  const count=Number(m[1]);
-  const max=Number(m[2]);
-  const min=m[3]===undefined?1:Number(m[3]);
-  const unique=Boolean(m[4]);
+  const count=Number(m[1]),max=Number(m[2]),min=m[3]===undefined?1:Number(m[3]),unique=Boolean(m[4]);
   if(count<1||count>50) throw Error(`${token}: 주사위 개수는 1~50입니다.`);
   if(max<1||max>10000||min<0||min>9999||min>max) throw Error(`${token}: 최소/최대값을 확인하세요.`);
   if(unique&&count>max-min+1) throw Error(`${token}: u에서는 ${count}개를 중복 없이 뽑을 수 없습니다.`);
@@ -69,7 +66,6 @@ function parseInput(){
   const lines=resultsEl.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
   if(!specs.length) throw Error('다이스 설정을 입력하세요.');
   if(specs.length!==lines.length) throw Error(`다이스 ${specs.length}줄과 결과 ${lines.length}줄의 개수가 다릅니다.`);
-
   const values=[];
   specs.forEach((token,line)=>{
     const dice=parseDice(token);
@@ -95,21 +91,9 @@ function buildCode(values){
   if(typeof originalAddComment!=='function') throw Error('addComment()을 찾지 못했습니다.');
   if(typeof originalSjclEncrypt!=='function') throw Error('sjcl.encrypt()을 찾지 못했습니다.');
 
-  const source=Function.prototype.toString.call(originalSubmitComment);
-  const diceSourceOk=(/Math\\.floor\\(\\s*Math\\.random\\(\\)\\s*\\(\\s*magDice\\s*-\\s*minDice\\s*\\+\\s*1\\s*\\)\\s*\\)\\s*\\+\\s*minDice/).test(source)
-    &&(/Math\\.floor\\(\\s*Math\\.random\\(\\)\\s*\\*\\s*possibleValues\\.length/).test(source);
-
-  if(!diceSourceOk){
-    throw Error('다이스 난수 코드 구조가 변경되었습니다. 테스트를 중단하고 기본 랜덤으로 사용하세요.');
-  }
-
   const testValues=[${nums.join(',')}];
   const expected=testValues.length;
-  const state={
-    phase:'idle',restored:false,count:0,index:0,overflow:false,inSjcl:0,
-    context:null,args:null,savedArea:undefined,savedUser:undefined,
-    pendingAdds:[],fallback:false
-  };
+  const state={phase:'idle',restored:false,count:0,index:0,overflow:false,inSjcl:0,context:null,args:null,savedArea:undefined,savedUser:undefined,pendingAdds:[],fallback:false};
 
   const saveInputs=()=>{
     const area=document.getElementById('commentArea');
@@ -160,10 +144,7 @@ function buildCode(values){
     return originalSubmitComment.apply(context,args);
   };
 
-  const hasUnsupportedCoin=()=>{
-    const text=state.savedArea||'';
-    return /\\[coin-?\\d{1,2}c/.test(text);
-  };
+  const hasUnsupportedCoin=()=>/\[coin-?\d{1,2}c-?\d{1,2}/.test(state.savedArea||'');
 
   window.__diceTestRestore=()=>cleanup('수동으로 테스트를 중단했습니다.');
 
@@ -175,19 +156,12 @@ function buildCode(values){
 
   Math.random=function(){
     if(state.restored||state.inSjcl>0) return nativeRandom();
-
-    if(state.phase==='probe'){
+    if(state.phase==='probe'||state.phase==='test'){
       state.count++;
+      if(state.phase==='test'&&state.index<expected) return testValues[state.index++];
+      if(state.phase==='test') state.overflow=true;
       return nativeRandom();
     }
-
-    if(state.phase==='test'){
-      state.count++;
-      if(state.index<expected) return testValues[state.index++];
-      state.overflow=true;
-      return nativeRandom();
-    }
-
     return nativeRandom();
   };
 
@@ -224,22 +198,14 @@ function buildCode(values){
     async function run(){
       let result;
 
-      if(hasUnsupportedCoin()){
-        return fallback('코인 다이스는 테스트하지 않습니다.');
-      }
+      if(hasUnsupportedCoin()) return fallback('코인 다이스가 발견되었습니다.');
 
-      try{
-        result=await callOriginal(state.context,state.args);
-      }catch(error){
-        if(!state.restored) return fallback('댓글 처리 중 오류가 발생했습니다.');
-        throw error;
-      }
+      try{result=await callOriginal(state.context,state.args);}
+      catch(error){if(!state.restored)return fallback('댓글 처리 중 오류가 발생했습니다.');throw error;}
 
       if(state.restored) return result;
 
-      if(state.count!==expected){
-        return fallback(`다이스 난수 개수가 다릅니다. 준비 ${expected}개 / 실제 ${state.count}개.`);
-      }
+      if(state.count!==expected) return fallback(`실제 난수 개수가 다릅니다. 준비 ${expected}개 / 실제 ${state.count}개.`);
 
       restoreInputs();
       state.pendingAdds.length=0;
@@ -248,18 +214,11 @@ function buildCode(values){
       state.overflow=false;
       state.phase='test';
 
-      try{
-        result=await callOriginal(state.context,state.args);
-      }catch(error){
-        if(!state.restored) return fallback('테스트 실행 중 오류가 발생했습니다.');
-        throw error;
-      }
+      try{result=await callOriginal(state.context,state.args);}
+      catch(error){if(!state.restored)return fallback('테스트 실행 중 오류가 발생했습니다.');throw error;}
 
       if(state.restored) return result;
-
-      if(state.overflow||state.index!==expected||state.count!==expected){
-        return fallback(`테스트 난수 개수가 다릅니다. 준비 ${expected}개 / 실제 ${state.count}개.`);
-      }
+      if(state.overflow||state.index!==expected||state.count!==expected) return fallback(`테스트 난수 개수가 다릅니다. 준비 ${expected}개 / 실제 ${state.count}개.`);
 
       const adds=state.pendingAdds.slice();
       cleanup('',true);
@@ -274,38 +233,20 @@ function buildCode(values){
 function generate(){
   statusEl.className='status';
   statusEl.textContent='';
-  try{
-    const values=parseInput();
-    outputEl.textContent=buildCode(values);
-    statusEl.className='status success';
-    statusEl.textContent=`생성 완료 · 테스트 난수 ${values.length}개`;
-  }catch(error){
-    outputEl.textContent='아직 생성된 코드가 없습니다.';
-    statusEl.className='status error';
-    statusEl.textContent=`생성하지 않았습니다: ${error.message}`;
-  }
+  try{const values=parseInput();outputEl.textContent=buildCode(values);statusEl.className='status success';statusEl.textContent=`생성 완료 · 테스트 난수 ${values.length}개`;}
+  catch(error){outputEl.textContent='아직 생성된 코드가 없습니다.';statusEl.className='status error';statusEl.textContent=`생성하지 않았습니다: ${error.message}`;}
 }
 
 document.querySelector('#generate').addEventListener('click',generate);
 document.querySelector('#copy').addEventListener('click',async()=>{
   const text=outputEl.textContent;
   if(!text||text.startsWith('아직')) return;
-  try{
-    await navigator.clipboard.writeText(text);
-    statusEl.className='status success';
-    statusEl.textContent='코드를 복사했습니다.';
-  }catch{
-    statusEl.className='status error';
-    statusEl.textContent='자동 복사에 실패했습니다. 직접 복사하세요.';
-  }
+  try{await navigator.clipboard.writeText(text);statusEl.className='status success';statusEl.textContent='코드를 복사했습니다.';}
+  catch{statusEl.className='status error';statusEl.textContent='자동 복사에 실패했습니다. 직접 복사하세요.';}
 });
 
 document.querySelector('#clear').addEventListener('click',()=>{
-  specsEl.value='';
-  resultsEl.value='';
-  outputEl.textContent='아직 생성된 코드가 없습니다.';
-  statusEl.className='status';
-  statusEl.textContent='';
+  specsEl.value='';resultsEl.value='';outputEl.textContent='아직 생성된 코드가 없습니다.';statusEl.className='status';statusEl.textContent='';
 });
 </script>
 </body>
