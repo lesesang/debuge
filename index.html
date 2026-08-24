@@ -5,106 +5,28 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dice Random Tester</title>
 <style>
-:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;--bg:#0b1020;--panel:#151d31;--field:#0a1020;--line:#29344d;--text:#f8fafc;--muted:#94a3b8;--accent:#e2e8f0;--ok:#86efac;--bad:#fca5a5;--warn:#fbbf24}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(960px,100%);margin:auto;padding:36px 20px 56px}header{margin-bottom:24px}h1{margin:0;font-size:28px;letter-spacing:-.03em}h2{margin:0;font-size:16px}p{margin:0}.sub{color:var(--muted);font-size:14px;margin-top:6px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:14px}.panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.step{color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:700px){main{padding:24px 14px 40px}.grid{grid-template-columns:1fr}}
-label{display:block;color:var(--muted);font-size:13px;margin-bottom:7px}textarea{display:block;width:100%;min-height:150px;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;resize:vertical;font:14px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;outline:none}textarea:focus{border-color:#64748b}.hint{color:var(--muted);font-size:12px;line-height:1.5;margin-top:7px}.hint code,.note code{background:var(--field);padding:2px 5px;border-radius:5px;color:var(--text)}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:9px;padding:10px 15px;font-weight:800;cursor:pointer}#generate{background:var(--accent);color:#0b1020}#copy,#clear{background:#3b475f;color:#fff}button:hover{filter:brightness(1.08)}.status{min-height:20px;margin-top:10px;font-size:13px}.success{color:var(--ok)}.error{color:var(--bad)}
-.output pre{margin:0;white-space:pre-wrap;overflow:auto;max-height:500px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:14px;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.empty{color:var(--muted)}.note{color:var(--muted);font-size:13px;line-height:1.7}.note strong{color:var(--text)}.warning{margin-top:10px;padding:10px 12px;border-left:3px solid var(--warn);background:#171b27;border-radius:7px}
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;--bg:#0b1020;--panel:#151d31;--field:#0a1020;--line:#29344d;--text:#f8fafc;--muted:#94a3b8;--accent:#e2e8f0;--ok:#86efac;--bad:#fca5a5;--warn:#fbbf24}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(960px,100%);margin:auto;padding:36px 20px 56px}header{margin-bottom:24px}h1{margin:0;font-size:28px;letter-spacing:-.03em}h2{margin:0;font-size:16px}p{margin:0}.sub{color:var(--muted);font-size:14px;margin-top:6px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:14px}.panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.step{color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:700px){main{padding:24px 14px 40px}.grid{grid-template-columns:1fr}}label{display:block;color:var(--muted);font-size:13px;margin-bottom:7px}textarea{display:block;width:100%;min-height:150px;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;resize:vertical;font:14px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;outline:none}textarea:focus{border-color:#64748b}.hint{color:var(--muted);font-size:12px;line-height:1.5;margin-top:7px}.hint code,.note code{background:var(--field);padding:2px 5px;border-radius:5px;color:var(--text)}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:9px;padding:10px 15px;font-weight:800;cursor:pointer}#generate{background:var(--accent);color:#0b1020}#copy,#clear{background:#3b475f;color:#fff}button:hover{filter:brightness(1.08)}.status{min-height:20px;margin-top:10px;font-size:13px}.success{color:var(--ok)}.error{color:var(--bad)}.output pre{margin:0;white-space:pre-wrap;overflow:auto;max-height:500px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:14px;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.empty{color:var(--muted)}.note{color:var(--muted);font-size:13px;line-height:1.7}.note strong{color:var(--text)}.warning{margin-top:10px;padding:10px 12px;border-left:3px solid var(--warn);background:#171b27;border-radius:7px}
 </style>
 </head>
 <body><main>
 <header><h1>Dice Random Tester</h1><p class="sub">댓글 다이스의 결과를 지정값으로 재현합니다.</p></header>
-<section class="panel"><div class="panel-title"><h2>테스트 값</h2><span class="step">1 / 2</span></div><div class="grid">
-<div><label for="specs">다이스</label><textarea id="specs" spellcheck="false" placeholder="2d100u
+<section class="panel"><div class="panel-title"><h2>테스트 값</h2><span class="step">1 / 2</span></div><div class="grid"><div><label for="specs">다이스</label><textarea id="specs" spellcheck="false" placeholder="2d100u
 1d600
-3d20m5"></textarea><p class="hint"><code>NdM</code> · 최소값 <code>NdMmK</code> · 중복 없음 <code>u</code></p></div>
-<div><label for="results">결과</label><textarea id="results" spellcheck="false" placeholder="40,80
+3d20m5"></textarea><p class="hint"><code>NdM</code> · 최소값 <code>NdMmK</code> · 중복 없음 <code>u</code></p></div><div><label for="results">결과</label><textarea id="results" spellcheck="false" placeholder="40,80
 123
-7,12,20"></textarea><p class="hint">각 줄은 왼쪽 다이스와 대응합니다.</p></div>
-</div><div class="actions"><button type="button" id="generate">코드 생성</button><button type="button" id="copy">복사</button><button type="button" id="clear">초기화</button></div><div id="status" class="status"></div></section>
+7,12,20"></textarea><p class="hint">각 줄은 왼쪽 다이스와 대응합니다.</p></div></div><div class="actions"><button type="button" id="generate">코드 생성</button><button type="button" id="copy">복사</button><button type="button" id="clear">초기화</button></div><div id="status" class="status"></div></section>
 <section class="panel"><div class="panel-title"><h2>생성된 코드</h2><span class="step">2 / 2</span></div><p class="sub" style="margin-bottom:10px">대상 사이트의 DevTools Console에 붙여넣어 실행하세요.</p><pre id="output" class="empty">아직 생성된 코드가 없습니다.</pre></section>
 <section class="panel"><div class="panel-title"><h2>알아둘 것</h2></div><div class="note"><strong>테스트:</strong> 실제 난수 개수와 준비한 값의 개수가 같을 때만 지정값을 사용합니다.</div><div class="note warning"><strong>불일치·오류·코인 다이스:</strong> 테스트값을 버리고 원래 랜덤으로 처리합니다.</div><div class="note" style="margin-top:10px">끝나면 자동 초기화됩니다. 수동 중단: <code>window.__diceTestRestore()</code></div></section>
 </main>
 <script>
-const VERSION='1.0.2';
-const specsEl=document.querySelector('#specs'),resultsEl=document.querySelector('#results'),outputEl=document.querySelector('#output'),statusEl=document.querySelector('#status');
-function parseDice(token){
-  const m=token.trim().match(/^(\d+)d(\d+)(?:m(\d+))?(u)?$/);
-  if(!m)throw Error(`다이스 형식이 올바르지 않습니다: ${token}`);
-  const count=Number(m[1]),max=Number(m[2]),min=m[3]===undefined?1:Number(m[3]),unique=Boolean(m[4]);
-  if(count<1||count>50)throw Error(`${token}: 주사위 개수는 1~50입니다.`);
-  if(max<1||max>10000||min<0||min>9999||min>max)throw Error(`${token}: 최소/최대값을 확인하세요.`);
-  if(unique&&count>max-min+1)throw Error(`${token}: u에서는 ${count}개를 중복 없이 뽑을 수 없습니다.`);
-  return{count,max,min,unique};
-}
-function valueToRandom(value,min,max){
-  if(!Number.isInteger(value)||value<min||value>max)throw Error(`${min}~${max} 범위 밖의 결과: ${value}`);
-  return(value-min+0.5)/(max-min+1);
-}
-function uniqueValuesToRandom(values,min,max){
-  const remaining=[];for(let n=min;n<=max;n++)remaining.push(n);
-  return values.map(value=>{if(!Number.isInteger(value)||value<min||value>max)throw Error(`${min}~${max} 범위 밖의 결과: ${value}`);const index=remaining.indexOf(value);if(index<0)throw Error(`u 결과가 중복되었습니다: ${value}`);const random=(index+0.5)/remaining.length;remaining.splice(index,1);return random;});
-}
-function parseInput(){
-  const specs=specsEl.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean),lines=resultsEl.value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-  if(!specs.length)throw Error('다이스 설정을 입력하세요.');
-  if(specs.length!==lines.length)throw Error(`다이스 ${specs.length}줄과 결과 ${lines.length}줄의 개수가 다릅니다.`);
-  const values=[];specs.forEach((token,line)=>{const dice=parseDice(token),results=lines[line].split(/\s*,\s*/).filter(Boolean).map(Number);if(results.length!==dice.count)throw Error(`${token}: 결과 ${dice.count}개가 필요하지만 ${results.length}개가 입력되었습니다.`);if(results.some(Number.isNaN))throw Error(`${token}: 결과에는 숫자만 입력하세요.`);values.push(...(dice.unique?uniqueValuesToRandom(results,dice.min,dice.max):results.map(v=>valueToRandom(v,dice.min,dice.max))));});return values;
-}
-function buildCode(values){
-  const nums=values.map(v=>Number(v.toFixed(12)));
-  return `(()=>{
-  // Dice Random Tester ${VERSION}
-  if(typeof window.__diceTestRestore==='function') window.__diceTestRestore();
-  const nativeRandom=Math.random;
-  const originalSubmitComment=window.submitComment;
-  const originalAddComment=window.addComment;
-  const originalSjclEncrypt=window.sjcl?.encrypt;
-  if(typeof originalSubmitComment!=='function') throw Error('submitComment()을 찾지 못했습니다.');
-  if(typeof originalAddComment!=='function') throw Error('addComment()을 찾지 못했습니다.');
-  if(typeof originalSjclEncrypt!=='function') throw Error('sjcl.encrypt()을 찾지 못했습니다.');
-  const testValues=[${nums.join(',')}],expected=testValues.length;
-  const state={phase:'idle',restored:false,count:0,index:0,overflow:false,inSjcl:0,context:null,args:null,savedArea:undefined,savedUser:undefined,pendingAdds:[],fallback:false};
-  const getArea=()=>document.getElementById('commentArea'),getUser=()=>document.getElementById('commentUser');
-  const saveInputs=()=>{state.savedArea=getArea()?.value;state.savedUser=getUser()?.value;};
-  const restoreInputs=()=>{const a=getArea(),u=getUser();if(a&&state.savedArea!==undefined)a.value=state.savedArea;if(u&&state.savedUser!==undefined)u.value=state.savedUser;};
-  const getText=()=>getArea()?.value||'';
-  const hasDice=()=>getText().includes('[dice');
-  const hasUnsupportedCoin=()=>getText().includes('[coin');
-  const detach=()=>{Math.random=nativeRandom;window.submitComment=originalSubmitComment;window.addComment=originalAddComment;window.sjcl.encrypt=originalSjclEncrypt;delete window.__diceTestRestore;};
-  const cleanup=(message,success=false)=>{if(state.restored)return;state.restored=true;state.phase='done';detach();state.pendingAdds.length=0;if(success)console.log('[Dice Tester] 테스트 성공. 상태를 초기화했습니다.');else if(message)console.warn('[Dice Tester] '+message);};
-  const fallback=async message=>{if(state.restored||state.fallback)return;state.fallback=true;const context=state.context,args=state.args;restoreInputs();detach();state.restored=true;state.phase='done';state.pendingAdds.length=0;console.warn('[Dice Tester] '+message+' 준비한 테스트값은 사용하지 않고 기본 랜덤으로 다시 실행합니다.');return originalSubmitComment.apply(context,args);};
-  window.__diceTestRestore=()=>cleanup('수동으로 테스트를 중단했습니다.');
-  async function callOriginal(context,args){const result=originalSubmitComment.apply(context,args);if(result&&typeof result.then==='function')await result;return result;}
-  function installHooks(){
-    window.sjcl.encrypt=function(...args){state.inSjcl++;try{return originalSjclEncrypt.apply(this,args);}finally{state.inSjcl--;}};
-    Math.random=function(){if(state.restored||state.inSjcl>0)return nativeRandom();if(state.phase==='probe'||state.phase==='test'){state.count++;if(state.phase==='test'&&state.index<expected)return testValues[state.index++];if(state.phase==='test')state.overflow=true;return nativeRandom();}return nativeRandom();};
-    window.addComment=function(...args){if(state.phase==='probe'||state.phase==='test'){state.pendingAdds.push({context:this,args});return undefined;}return originalAddComment.apply(this,args);};
-  }
-  window.submitComment=function(...args){
-    if(state.restored)return originalSubmitComment.apply(this,args);
-    if(state.phase!=='idle')return undefined;
-    state.context=this;state.args=args;saveInputs();
-    if(!hasDice()||hasUnsupportedCoin())return originalSubmitComment.apply(this,args);
-    state.phase='probe';installHooks();return run();
-    async function run(){
-      let result;
-      try{result=await callOriginal(state.context,state.args);}catch(error){return fallback('댓글 처리 중 오류가 발생했습니다.');}
-      if(state.restored)return result;
-      if(state.count!==expected)return fallback('실제 난수 개수가 다릅니다. 준비 '+expected+'개 / 실제 '+state.count+'개.');
-      restoreInputs();state.pendingAdds.length=0;state.count=0;state.index=0;state.overflow=false;state.phase='test';
-      try{result=await callOriginal(state.context,state.args);}catch(error){return fallback('테스트 실행 중 오류가 발생했습니다.');}
-      if(state.restored)return result;
-      if(state.overflow||state.index!==expected||state.count!==expected)return fallback('테스트 난수 개수가 다릅니다. 준비 '+expected+'개 / 실제 '+state.count+'개.');
-      const adds=state.pendingAdds.slice();cleanup('',true);for(const add of adds)originalAddComment.apply(add.context,add.args);return result;
-    }
-  };
-  console.log('[Dice Tester] 준비 완료.');
-})();`;}
-function generate(){statusEl.className='status';statusEl.textContent='';try{const values=parseInput();outputEl.textContent=buildCode(values);outputEl.className='';statusEl.className='status success';statusEl.textContent=`생성 완료 · 테스트 난수 ${values.length}개`;}catch(error){outputEl.textContent='아직 생성된 코드가 없습니다.';outputEl.className='empty';statusEl.className='status error';statusEl.textContent=`생성하지 않았습니다: ${error.message}`;}}
-document.querySelector('#generate').addEventListener('click',generate);
-document.querySelector('#copy').addEventListener('click',async()=>{const text=outputEl.textContent;if(!text||text.startsWith('아직')){statusEl.className='status error';statusEl.textContent='먼저 코드를 생성하세요.';return;}try{await navigator.clipboard.writeText(text);statusEl.className='status success';statusEl.textContent='코드를 복사했습니다.';}catch{statusEl.className='status error';statusEl.textContent='자동 복사에 실패했습니다. 코드를 직접 복사하세요.';}});
-document.querySelector('#clear').addEventListener('click',()=>{specsEl.value='';resultsEl.value='';outputEl.textContent='아직 생성된 코드가 없습니다.';outputEl.className='empty';statusEl.className='status';statusEl.textContent='초기화했습니다.';});
+const VERSION='1.0.2',specsEl=document.querySelector('#specs'),resultsEl=document.querySelector('#results'),outputEl=document.querySelector('#output'),statusEl=document.querySelector('#status');
+function parseDice(token){const m=token.trim().match(/^(\d+)d(\d+)(?:m(\d+))?(u)?$/);if(!m)throw Error(`다이스 형식이 올바르지 않습니다: ${token}`);const count=+m[1],max=+m[2],min=m[3]===undefined?1:+m[3],unique=!!m[4];if(count<1||count>50)throw Error(`${token}: 주사위 개수는 1~50입니다.`);if(max<1||max>10000||min<0||min>9999||min>max)throw Error(`${token}: 최소/최대값을 확인하세요.`);if(unique&&count>max-min+1)throw Error(`${token}: u에서는 ${count}개를 중복 없이 뽑을 수 없습니다.`);return{count,max,min,unique}}
+function valueToRandom(v,min,max){if(!Number.isInteger(v)||v<min||v>max)throw Error(`${min}~${max} 범위 밖의 결과: ${v}`);return(v-min+.5)/(max-min+1)}
+function uniqueValuesToRandom(a,min,max){const r=[];for(let n=min;n<=max;n++)r.push(n);return a.map(v=>{if(!Number.isInteger(v)||v<min||v>max)throw Error(`${min}~${max} 범위 밖의 결과: ${v}`);const i=r.indexOf(v);if(i<0)throw Error(`u 결과가 중복되었습니다: ${v}`);const x=(i+.5)/r.length;r.splice(i,1);return x})}
+function parseInput(){const s=specsEl.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean),l=resultsEl.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!s.length)throw Error('다이스 설정을 입력하세요.');if(s.length!==l.length)throw Error(`다이스 ${s.length}줄과 결과 ${l.length}줄의 개수가 다릅니다.`);const out=[];s.forEach((t,i)=>{const d=parseDice(t),a=l[i].split(/\s*,\s*/).filter(Boolean).map(Number);if(a.length!==d.count)throw Error(`${t}: 결과 ${d.count}개가 필요하지만 ${a.length}개가 입력되었습니다.`);if(a.some(Number.isNaN))throw Error(`${t}: 결과에는 숫자만 입력하세요.`);out.push(...(d.unique?uniqueValuesToRandom(a,d.min,d.max):a.map(v=>valueToRandom(v,d.min,d.max))))});return out}
+function buildCode(values){const v=values.map(x=>+x.toFixed(12));return`(()=>{\n// Dice Random Tester ${VERSION}\nif(typeof window.__diceTestRestore==='function')window.__diceTestRestore();\nconst R=Math.random,S=window.submitComment,A=window.addComment,E=window.sjcl?.encrypt;if(typeof S!=='function'||typeof A!=='function'||typeof E!=='function')throw Error('필요한 사이트 함수를 찾지 못했습니다.');\nconst V=[${v.join(',')}],N=V.length,T={p:'idle',done:false,c:0,i:0,o:false,s:0,x:null,a:null,adds:[]},area=()=>document.getElementById('commentArea'),user=()=>document.getElementById('commentUser'),text=()=>area()?.value||'',save=()=>{T.x=area()?.value;T.u=user()?.value},restore=()=>{const a=area(),u=user();if(a&&T.x!==undefined)a.value=T.x;if(u&&T.u!==undefined)u.value=T.u},detach=()=>{Math.random=R;window.submitComment=S;window.addComment=A;window.sjcl.encrypt=E;delete window.__diceTestRestore},finish=ok=>{if(T.done)return;T.done=true;detach();T.adds.length=0;if(ok)console.log('[Dice Tester] 테스트 성공. 상태를 초기화했습니다.')},fallback=async m=>{if(T.done)return;const x=T.x0,a=T.a;restore();finish();console.warn('[Dice Tester] '+m+' 준비한 테스트값은 사용하지 않고 기본 랜덤으로 다시 실행합니다.');return S.apply(x,a)};\nwindow.__diceTestRestore=()=>finish(false);\nfunction hook(){window.sjcl.encrypt=function(...a){T.s++;try{return E.apply(this,a)}finally{T.s--}};Math.random=function(){if(T.done||T.s)return R();if(T.p==='probe'||T.p==='test'){T.c++;if(T.p==='test'&&T.i<N)return V[T.i++];if(T.p==='test')T.o=true}return R()};window.addComment=function(...a){if(T.p==='probe'||T.p==='test'){T.adds.push({c:this,a});return}return A.apply(this,a)}}\nwindow.submitComment=function(...a){if(T.done)return S.apply(this,a);if(T.p!=='idle')return;if(!text().includes('[dice')||text().includes('[coin'))return S.apply(this,a);T.x0=this;T.a=a;save();T.p='probe';hook();run()};\nasync function run(){try{await S.apply(T.x0,T.a)}catch(e){return fallback('댓글 처리 중 오류가 발생했습니다.')}if(T.done)return;if(T.c!==N)return fallback('실제 난수 개수가 다릅니다. 준비 '+N+'개 / 실제 '+T.c+'개.');restore();T.adds.length=0;T.c=T.i=0;T.o=false;T.p='test';try{await S.apply(T.x0,T.a)}catch(e){return fallback('테스트 실행 중 오류가 발생했습니다.')}if(T.done)return;if(T.o||T.i!==N||T.c!==N)return fallback('테스트 난수 개수가 다릅니다. 준비 '+N+'개 / 실제 '+T.c+'개.');const q=T.adds.slice();finish(true);for(const z of q)A.apply(z.c,z.a)}\nconsole.log('[Dice Tester] 준비 완료.');\n})();`}
+function generate(){statusEl.className='status';statusEl.textContent='';try{const v=parseInput();outputEl.textContent=buildCode(v);outputEl.className='';statusEl.className='status success';statusEl.textContent=`생성 완료 · 테스트 난수 ${v.length}개`}catch(e){outputEl.textContent='아직 생성된 코드가 없습니다.';outputEl.className='empty';statusEl.className='status error';statusEl.textContent=`생성하지 않았습니다: ${e.message}`}}
+document.querySelector('#generate').addEventListener('click',generate);document.querySelector('#copy').addEventListener('click',async()=>{const t=outputEl.textContent;if(!t||t.startsWith('아직')){statusEl.className='status error';statusEl.textContent='먼저 코드를 생성하세요.';return}try{await navigator.clipboard.writeText(t);statusEl.className='status success';statusEl.textContent='코드를 복사했습니다.'}catch{statusEl.className='status error';statusEl.textContent='자동 복사에 실패했습니다. 코드를 직접 복사하세요.'}});document.querySelector('#clear').addEventListener('click',()=>{specsEl.value=resultsEl.value='';outputEl.textContent='아직 생성된 코드가 없습니다.';outputEl.className='empty';statusEl.className='status';statusEl.textContent='초기화했습니다.'});
 </script>
 </body>
 </html>
