@@ -5,31 +5,28 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Dice Random Tester</title>
 <style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif;--bg:#0f172a;--card:#1e293b;--line:#334155;--muted:#94a3b8;--text:#f8fafc;--ok:#86efac;--bad:#fca5a5;--warn:#fbbf24}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{max-width:920px;margin:auto;padding:32px 20px 56px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:16px}header{margin-bottom:20px}h1{margin:0 0 6px;font-size:30px}h2{font-size:18px;margin:0 0 7px}.desc,.hint{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:700px){.grid{grid-template-columns:1fr}}textarea{width:100%;min-height:145px;background:#0b1220;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;resize:vertical;font:14px/1.6 monospace}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:9px;padding:10px 15px;font-weight:800;cursor:pointer}#generate{background:#e2e8f0;color:#0f172a}#copy,.secondary{background:#475569;color:#fff}.status{min-height:22px;margin-top:11px}.success{color:var(--ok)}.error{color:var(--bad)}pre{white-space:pre-wrap;overflow:auto;max-height:520px;background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:15px;font:13px/1.5 monospace}.guide{padding:11px 12px;background:#162033;border:1px solid #2c3a50;border-radius:10px;line-height:1.65;margin-top:8px}.guide code,.hint code{background:#0b1220;padding:2px 5px;border-radius:5px}.warn{border-left:3px solid var(--warn)}.example{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:700px){.example{grid-template-columns:1fr}}.example div{background:#0b1220;border:1px solid var(--line);border-radius:10px;padding:10px;font:13px/1.5 monospace}
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;--bg:#0b1020;--panel:#151d31;--field:#0a1020;--line:#29344d;--text:#f8fafc;--muted:#94a3b8;--accent:#e2e8f0;--ok:#86efac;--bad:#fca5a5;--warn:#fbbf24}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text)}main{width:min(960px,100%);margin:auto;padding:36px 20px 56px}header{margin-bottom:24px}h1{margin:0;font-size:28px;letter-spacing:-.03em}h2{margin:0;font-size:16px}p{margin:0}.sub{color:var(--muted);font-size:14px;margin-top:6px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;margin-top:14px}.panel-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.step{color:var(--muted);font-size:12px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:700px){main{padding:24px 14px 40px}.grid{grid-template-columns:1fr}}
+label{display:block;color:var(--muted);font-size:13px;margin-bottom:7px}textarea{display:block;width:100%;min-height:150px;background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;resize:vertical;font:14px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;outline:none}textarea:focus{border-color:#64748b}.hint{color:var(--muted);font-size:12px;line-height:1.5;margin-top:7px}.hint code,.note code{background:var(--field);padding:2px 5px;border-radius:5px;color:var(--text)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:9px;padding:10px 15px;font-weight:800;cursor:pointer}#generate{background:var(--accent);color:#0b1020}#copy,#clear{background:#3b475f;color:#fff}button:hover{filter:brightness(1.08)}.status{min-height:20px;margin-top:10px;font-size:13px}.success{color:var(--ok)}.error{color:var(--bad)}
+.output{position:relative}.output pre{margin:0;white-space:pre-wrap;overflow:auto;max-height:500px;background:var(--field);border:1px solid var(--line);border-radius:10px;padding:14px;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}.empty{color:var(--muted)}.note{color:var(--muted);font-size:13px;line-height:1.7}.note strong{color:var(--text)}.warning{margin-top:10px;padding:10px 12px;border-left:3px solid var(--warn);background:#171b27;border-radius:7px}
 </style>
 </head>
 <body><main>
-<header><h1>Dice Random Tester</h1><p class="desc">댓글 다이스 결과를 지정한 값으로 재현하는 테스트 도구입니다.</p></header>
+<header><h1>Dice Random Tester</h1><p class="sub">댓글 다이스의 결과를 지정값으로 재현합니다.</p></header>
 
-<section class="card"><h2>1. 다이스와 결과 입력</h2><p class="desc">같은 줄의 다이스와 결과가 서로 대응합니다.</p><div class="grid">
-<div><h2>다이스</h2><textarea id="specs" spellcheck="false" placeholder="2d100u
+<section class="panel"><div class="panel-title"><h2>테스트 값</h2><span class="step">1 / 2</span></div><div class="grid">
+<div><label for="specs">다이스</label><textarea id="specs" spellcheck="false" placeholder="2d100u
 1d600
 3d20m5"></textarea><p class="hint"><code>NdM</code> · 최소값 <code>NdMmK</code> · 중복 없음 <code>u</code></p></div>
-<div><h2>결과</h2><textarea id="results" spellcheck="false" placeholder="40,80
+<div><label for="results">결과</label><textarea id="results" spellcheck="false" placeholder="40,80
 123
-7,12,20"></textarea><p class="hint"><code>2d100u</code>라면 결과도 2개가 필요합니다.</p></div>
-</div><div class="actions"><button id="generate">테스트 코드 생성</button><button id="copy">코드 복사</button><button id="clear" class="secondary">초기화</button></div><div id="status" class="status"></div></section>
+7,12,20"></textarea><p class="hint">각 줄은 왼쪽 다이스와 대응합니다.</p></div>
+</div><div class="actions"><button id="generate">코드 생성</button><button id="copy">복사</button><button id="clear">초기화</button></div><div id="status" class="status"></div></section>
 
-<section class="card"><h2>2. 생성된 코드</h2><p class="desc">대상 사이트의 DevTools Console에 붙여넣고 실행하세요. 댓글을 먼저 써도 됩니다.</p><pre id="output">아직 생성된 코드가 없습니다.</pre></section>
+<section class="panel output"><div class="panel-title"><h2>생성된 코드</h2><span class="step">2 / 2</span></div><p class="sub" style="margin-bottom:10px">대상 사이트의 DevTools Console에 붙여넣어 실행하세요.</p><pre id="output" class="empty">아직 생성된 코드가 없습니다.</pre></section>
 
-<section class="card"><h2>3. 동작 방식</h2><div class="guide">댓글에 다이스가 없으면 <code>Math.random</code>을 건드리지 않습니다.</div><div class="guide">다이스 댓글일 때만 난수를 임시로 제어하고, SJCL 암호화용 난수는 원래 랜덤을 사용합니다.</div><div class="guide">준비한 난수와 실제 필요한 난수의 개수가 정확히 같을 때만 테스트값을 적용합니다.</div><div class="guide warn">개수가 다르거나 코인 다이스·오류가 있으면 테스트를 취소하고 원래 랜덤으로 댓글을 다시 처리합니다.</div><div class="guide">성공·실패·오류·수동 중단 후 테스트 상태는 자동으로 초기화됩니다.</div></section>
-
-<section class="card"><h2>예시</h2><div class="example"><div>다이스
-2d100u
-1d600</div><div>결과
-40,80
-123</div></div><p class="hint" style="margin-top:10px">댓글은 일반 문장이나 색상·크기·글꼴 같은 서식과 함께 사용해도 됩니다.</p><p class="hint">수동 중단: <code>window.__diceTestRestore()</code></p></section>
+<section class="panel"><div class="panel-title"><h2>알아둘 것</h2></div><div class="note"><strong>테스트가 적용되는 경우</strong><br>다이스 댓글이고, 실제 필요한 난수 개수와 준비한 값의 개수가 정확히 같을 때만 지정값을 사용합니다.</div><div class="note warning"><strong>그 외에는</strong><br>개수 불일치, 코인 다이스, 오류가 발생하면 테스트값을 버리고 원래 랜덤으로 다시 처리합니다. 테스트가 끝나면 상태도 자동으로 초기화됩니다.</div><div class="note" style="margin-top:10px">일반 문장이나 글꼴·크기·색상 등의 서식이 있는 댓글은 그대로 처리합니다. 수동 중단: <code>window.__diceTestRestore()</code></div></section>
 </main>
 <script>
 const specsEl=document.querySelector('#specs'),resultsEl=document.querySelector('#results'),outputEl=document.querySelector('#output'),statusEl=document.querySelector('#status');
@@ -219,10 +216,12 @@ function generate(){
   try{
     const values=parseInput();
     outputEl.textContent=buildCode(values);
+    outputEl.className='';
     statusEl.className='status success';
     statusEl.textContent=`생성 완료 · 테스트 난수 ${values.length}개`;
   }catch(error){
     outputEl.textContent='아직 생성된 코드가 없습니다.';
+    outputEl.className='empty';
     statusEl.className='status error';
     statusEl.textContent=`생성하지 않았습니다: ${error.message}`;
   }
@@ -246,6 +245,7 @@ document.querySelector('#clear').addEventListener('click',()=>{
   specsEl.value='';
   resultsEl.value='';
   outputEl.textContent='아직 생성된 코드가 없습니다.';
+  outputEl.className='empty';
   statusEl.className='status';
   statusEl.textContent='';
 });
